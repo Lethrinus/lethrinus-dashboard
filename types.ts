@@ -55,6 +55,8 @@ export interface FileItem {
   size?: number; // bytes
   mimeType?: string;
   uploadDate: number;
+  storagePath?: string; // Supabase Storage path
+  publicUrl?: string; // Public URL for the file
 }
 
 export interface MediaItem {

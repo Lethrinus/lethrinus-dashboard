@@ -1368,3 +1368,413 @@ export const CyberCat: React.FC<CyberCatProps> = ({
     </motion.div>
   );
 };
+
+// ============================================================================
+// SHIMMER EFFECT - ReactBits inspired
+// ============================================================================
+export const Shimmer: React.FC<{
+  children: ReactNode;
+  className?: string;
+  duration?: number;
+}> = ({ children, className = '', duration = 2 }) => (
+  <div className={`relative overflow-hidden ${className}`}>
+    {children}
+    <motion.div
+      className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent"
+      animate={{ translateX: ['0%', '200%'] }}
+      transition={{
+        duration,
+        repeat: Infinity,
+        ease: 'linear',
+      }}
+    />
+  </div>
+);
+
+// ============================================================================
+// BORDER GLOW - Animated border glow effect (Optimized)
+// ============================================================================
+export const BorderGlow: React.FC<{
+  children: ReactNode;
+  className?: string;
+  color?: string;
+  intensity?: number;
+}> = ({ children, className = '', color = '#8b5cf6', intensity = 0.5 }) => {
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const opacity = useMotionValue(0);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    mouseX.set(e.clientX - rect.left);
+    mouseY.set(e.clientY - rect.top);
+    opacity.set(1);
+  };
+
+  const handleMouseLeave = () => {
+    opacity.set(0);
+  };
+
+  const mouseXSpring = useSpring(mouseX, { stiffness: 500, damping: 50 });
+  const mouseYSpring = useSpring(mouseY, { stiffness: 500, damping: 50 });
+  const opacitySpring = useSpring(opacity, { stiffness: 300, damping: 30 });
+
+  return (
+    <motion.div
+      ref={ref}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      className={`relative ${className} will-change-transform`}
+      whileHover={{ scale: 1.02 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+    >
+      <motion.div
+        className="absolute inset-0 rounded-xl pointer-events-none"
+        style={{
+          background: `radial-gradient(600px circle at ${mouseXSpring}px ${mouseYSpring}px, ${color}${Math.floor(intensity * 255).toString(16)}, transparent 40%)`,
+          opacity: opacitySpring,
+          filter: 'blur(20px)',
+          willChange: 'opacity, background-position',
+        }}
+      />
+      <div className="relative border border-white/10 rounded-xl bg-black/20 backdrop-blur-sm">
+        {children}
+      </div>
+    </motion.div>
+  );
+};
+
+// ============================================================================
+// GRADIENT TEXT - Animated gradient text
+// ============================================================================
+export const GradientText: React.FC<{
+  text: string;
+  className?: string;
+  gradient?: string[];
+  speed?: number;
+}> = ({ text, className = '', gradient = ['#8b5cf6', '#3b82f6', '#10b981'], speed = 3 }) => (
+  <motion.span
+    className={`bg-clip-text text-transparent bg-gradient-to-r ${className}`}
+    style={{
+      backgroundImage: `linear-gradient(90deg, ${gradient.join(', ')})`,
+      backgroundSize: '200% auto',
+    }}
+    animate={{ backgroundPosition: ['0% center', '200% center', '0% center'] }}
+    transition={{ duration: speed, repeat: Infinity, ease: 'linear' }}
+  >
+    {text}
+  </motion.span>
+);
+
+// ============================================================================
+// TILT CARD - 3D tilt effect on hover (Optimized for performance)
+// ============================================================================
+export const TiltCard: React.FC<{
+  children: ReactNode;
+  className?: string;
+  intensity?: number;
+}> = ({ children, className = '', intensity = 15 }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const rotateX = useMotionValue(0);
+  const rotateY = useMotionValue(0);
+  const rotateXSpring = useSpring(rotateX, { stiffness: 300, damping: 30 });
+  const rotateYSpring = useSpring(rotateY, { stiffness: 300, damping: 30 });
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const rotateXValue = ((e.clientY - centerY) / rect.height) * intensity;
+    const rotateYValue = ((centerX - e.clientX) / rect.width) * intensity;
+    rotateX.set(rotateXValue);
+    rotateY.set(rotateYValue);
+  };
+
+  const handleMouseLeave = () => {
+    rotateX.set(0);
+    rotateY.set(0);
+  };
+
+  return (
+    <motion.div
+      ref={ref}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      className={`${className} will-change-transform`}
+      style={{
+        rotateX: rotateXSpring,
+        rotateY: rotateYSpring,
+        transformStyle: 'preserve-3d',
+        perspective: '1000px',
+        transform: 'translateZ(0)',
+      }}
+    >
+      {children}
+    </motion.div>
+  );
+};
+
+// ============================================================================
+// BLUR REVEAL - Blur to reveal animation
+// ============================================================================
+export const BlurReveal: React.FC<{
+  children: ReactNode;
+  className?: string;
+  delay?: number;
+  duration?: number;
+}> = ({ children, className = '', delay = 0, duration = 0.8 }) => (
+  <motion.div
+    className={className}
+    initial={{ filter: 'blur(10px)', opacity: 0 }}
+    animate={{ filter: 'blur(0px)', opacity: 1 }}
+    transition={{ duration, delay, ease: [0.25, 0.46, 0.45, 0.94] }}
+  >
+    {children}
+  </motion.div>
+);
+
+// ============================================================================
+// RIPPLE BUTTON - Ripple effect on click
+// ============================================================================
+export const RippleButton: React.FC<{
+  children: ReactNode;
+  className?: string;
+  onClick?: () => void;
+  disabled?: boolean;
+}> = ({ children, className = '', onClick, disabled }) => {
+  const [ripples, setRipples] = useState<Array<{ x: number; y: number; id: number }>>([]);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!buttonRef.current || disabled) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const id = Date.now();
+    setRipples(prev => [...prev, { x, y, id }]);
+    setTimeout(() => setRipples(prev => prev.filter(r => r.id !== id)), 600);
+    onClick?.();
+  };
+
+  return (
+    <button
+      ref={buttonRef}
+      onClick={handleClick}
+      disabled={disabled}
+      className={`relative overflow-hidden ${className}`}
+    >
+      {children}
+      {ripples.map(ripple => (
+        <motion.span
+          key={ripple.id}
+          className="absolute rounded-full bg-white/30"
+          style={{
+            left: ripple.x,
+            top: ripple.y,
+            width: 0,
+            height: 0,
+          }}
+          animate={{
+            width: 300,
+            height: 300,
+            x: -150,
+            y: -150,
+            opacity: [0.5, 0],
+          }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
+        />
+      ))}
+    </button>
+  );
+};
+
+// ============================================================================
+// FLIP CARD - 3D flip card animation
+// ============================================================================
+export const FlipCard: React.FC<{
+  front: ReactNode;
+  back: ReactNode;
+  className?: string;
+  flipOnHover?: boolean;
+}> = ({ front, back, className = '', flipOnHover = true }) => {
+  const [isFlipped, setIsFlipped] = useState(false);
+
+  return (
+    <div
+      className={`relative ${className}`}
+      style={{ perspective: '1000px' }}
+      onMouseEnter={() => flipOnHover && setIsFlipped(true)}
+      onMouseLeave={() => flipOnHover && setIsFlipped(false)}
+      onClick={() => !flipOnHover && setIsFlipped(!isFlipped)}
+    >
+      <motion.div
+        className="relative w-full h-full"
+        animate={{ rotateY: isFlipped ? 180 : 0 }}
+        transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+        style={{ transformStyle: 'preserve-3d' }}
+      >
+        <div className="absolute inset-0 backface-hidden" style={{ backfaceVisibility: 'hidden' }}>
+          {front}
+        </div>
+        <div
+          className="absolute inset-0 backface-hidden"
+          style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+        >
+          {back}
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
+// ============================================================================
+// MORPHING BLOB - Animated blob shape
+// ============================================================================
+export const MorphingBlob: React.FC<{
+  className?: string;
+  color?: string;
+  size?: number;
+  speed?: number;
+}> = ({ className = '', color = '#8b5cf6', size = 400, speed = 20 }) => {
+  const pathRef = useRef<SVGPathElement>(null);
+
+  useEffect(() => {
+    if (!pathRef.current) return;
+
+    const animate = () => {
+      const points = Array.from({ length: 8 }, (_, i) => {
+        const angle = (i / 8) * Math.PI * 2;
+        const radius = size / 2 + Math.sin(Date.now() / speed + i) * 50;
+        const x = Math.cos(angle) * radius + size / 2;
+        const y = Math.sin(angle) * radius + size / 2;
+        return { x, y };
+      });
+
+      const pathData = `M ${points[0].x} ${points[0].y} ${points
+        .slice(1)
+        .map((p, i) => {
+          const next = points[(i + 2) % points.length];
+          return `Q ${points[i + 1].x} ${points[i + 1].y} ${(p.x + next.x) / 2} ${(p.y + next.y) / 2}`;
+        })
+        .join(' ')} Z`;
+
+      if (pathRef.current) {
+        pathRef.current.setAttribute('d', pathData);
+      }
+      requestAnimationFrame(animate);
+    };
+
+    animate();
+  }, [size, speed]);
+
+  return (
+    <svg width={size} height={size} className={className}>
+      <defs>
+        <linearGradient id="blobGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor={color} stopOpacity="0.8" />
+          <stop offset="100%" stopColor={color} stopOpacity="0.4" />
+        </linearGradient>
+      </defs>
+      <path
+        ref={pathRef}
+        fill="url(#blobGradient)"
+        filter="blur(40px)"
+      />
+    </svg>
+  );
+};
+
+// ============================================================================
+// SCROLL PROGRESS - Scroll progress indicator
+// ============================================================================
+export const ScrollProgress: React.FC<{ className?: string; color?: string }> = ({
+  className = '',
+  color = '#8b5cf6',
+}) => {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const updateProgress = () => {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = (scrollTop / docHeight) * 100;
+      setProgress(progress);
+    };
+
+    window.addEventListener('scroll', updateProgress);
+    updateProgress(); // Initial calculation
+    return () => window.removeEventListener('scroll', updateProgress);
+  }, []);
+
+  return (
+    <motion.div
+      className={`fixed top-0 left-0 right-0 h-1 z-50 ${className}`}
+      style={{ 
+        backgroundColor: color,
+        transformOrigin: 'left',
+        scaleX: progress / 100 
+      }}
+      initial={{ scaleX: 0 }}
+      animate={{ scaleX: progress / 100 }}
+      transition={{ duration: 0.1 }}
+    />
+  );
+};
+
+// ============================================================================
+// GLASSMORPHISM CARD - Glass effect card
+// ============================================================================
+export const GlassCard: React.FC<{
+  children: ReactNode;
+  className?: string;
+  blur?: number;
+  opacity?: number;
+}> = ({ children, className = '', blur = 10, opacity = 0.1 }) => (
+  <motion.div
+    className={`backdrop-blur-md border border-white/20 rounded-xl ${className}`}
+    style={{
+      background: `rgba(255, 255, 255, ${opacity})`,
+      backdropFilter: `blur(${blur}px)`,
+    }}
+    whileHover={{ borderColor: 'rgba(139, 92, 246, 0.4)', scale: 1.02 }}
+    transition={{ duration: 0.2 }}
+  >
+    {children}
+  </motion.div>
+);
+
+// ============================================================================
+// COUNTER ANIMATION - Animated number counter
+// ============================================================================
+export const AnimatedCounter: React.FC<{
+  value: number;
+  duration?: number;
+  className?: string;
+  decimals?: number;
+}> = ({ value, duration = 1, className = '', decimals = 0 }) => {
+  const [displayValue, setDisplayValue] = useState(0);
+
+  useEffect(() => {
+    let startTime: number;
+    const startValue = displayValue;
+    const endValue = value;
+
+    const animate = (currentTime: number) => {
+      if (!startTime) startTime = currentTime;
+      const progress = Math.min((currentTime - startTime) / (duration * 1000), 1);
+      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+      setDisplayValue(startValue + (endValue - startValue) * easeOutQuart);
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+
+    requestAnimationFrame(animate);
+  }, [value, duration]);
+
+  return <span className={className}>{displayValue.toFixed(decimals)}</span>;
+};

@@ -1,11 +1,11 @@
 // filepath: c:\Users\yavuz\OneDrive\Masaüstü\Longhorn\lethrinus-dashboard\components\Notes.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../services/api';
 import { Note, AccentColor } from '../types';
-import { Plus, Trash2, Pin, Search, FileText, Sparkles } from 'lucide-react';
+import { Plus, Trash2, Pin, Search, FileText, Sparkles, Save, Check, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
-import { SpotlightCard, CardHover, Skeleton } from './Animations';
+import { SpotlightCard, CardHover, Skeleton, GlassCard, GradientText, Shimmer } from './Animations';
 
 interface NotesProps {
   accent: AccentColor;
@@ -16,6 +16,9 @@ export const Notes: React.FC<NotesProps> = ({ accent }) => {
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     loadNotes();
@@ -57,7 +60,7 @@ export const Notes: React.FC<NotesProps> = ({ accent }) => {
     }
   };
 
-  const handleUpdateNote = async (id: string, updates: Partial<Note>) => {
+  const performSave = useCallback(async (id: string, updates: Partial<Note>) => {
     const note = notes.find(n => n.id === id);
     if (!note) return;
 
@@ -66,7 +69,9 @@ export const Notes: React.FC<NotesProps> = ({ accent }) => {
     // Update local state immediately for responsiveness
     setNotes(prev => prev.map(n => (n.id === id ? updated : n)));
 
-    // Debounce API call
+    setSaveStatus('saving');
+    setErrorMessage(null);
+
     try {
       const savedNote = await api.saveNote(updated);
       // Update with server response (might have new ID if it was a temp ID)
@@ -74,10 +79,45 @@ export const Notes: React.FC<NotesProps> = ({ accent }) => {
       if (activeNoteId === id && savedNote.id !== id) {
         setActiveNoteId(savedNote.id);
       }
-    } catch (error) {
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus('idle'), 2000);
+    } catch (error: any) {
       console.error('Failed to save note:', error);
+      setSaveStatus('error');
+      setErrorMessage(error?.message || 'Failed to save note. Please try again.');
+      setTimeout(() => {
+        setSaveStatus('idle');
+        setErrorMessage(null);
+      }, 5000);
     }
-  };
+  }, [notes, activeNoteId]);
+
+  const handleUpdateNote = useCallback((id: string, updates: Partial<Note>) => {
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // Update local state immediately
+    const note = notes.find(n => n.id === id);
+    if (!note) return;
+    const updated = { ...note, ...updates, updatedAt: Date.now() };
+    setNotes(prev => prev.map(n => (n.id === id ? updated : n)));
+
+    // Debounce API call (1.5 seconds)
+    saveTimeoutRef.current = setTimeout(() => {
+      performSave(id, updates);
+    }, 1500);
+  }, [notes, performSave]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -175,7 +215,7 @@ export const Notes: React.FC<NotesProps> = ({ accent }) => {
 
                   <div className="flex justify-between items-start mb-1">
                     <h4
-                      className={`font-medium truncate ${
+                      className={`font-medium truncate flex-1 ${
                         activeNoteId === note.id ? 'text-violet-300' : 'text-white'
                       }`}
                     >
@@ -239,26 +279,70 @@ export const Notes: React.FC<NotesProps> = ({ accent }) => {
             className="max-w-3xl w-full mx-auto p-8 h-full flex flex-col relative z-10"
           >
             {/* Title Row */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-6 gap-4">
               <input
                 type="text"
                 value={activeNote.title}
                 onChange={e => handleUpdateNote(activeNote.id, { title: e.target.value })}
-                className="text-3xl font-bold bg-transparent border-none focus:ring-0 text-white w-full p-0 outline-none placeholder-slate-700"
+                className="flex-1 text-3xl font-bold bg-transparent border-none focus:ring-0 text-white p-0 outline-none placeholder-slate-700"
                 placeholder="Untitled Note"
               />
-              <motion.button
-                onClick={() => handleUpdateNote(activeNote.id, { isPinned: !activeNote.isPinned })}
-                className={`p-2.5 rounded-lg transition-all ${
-                  activeNote.isPinned
-                    ? 'text-violet-400 bg-violet-500/20 border border-violet-500/30'
-                    : 'text-slate-500 hover:text-white hover:bg-white/5 border border-transparent'
-                }`}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Pin size={20} className={activeNote.isPinned ? 'fill-current rotate-45' : ''} />
-              </motion.button>
+              <div className="flex items-center gap-2">
+                {/* Save Status */}
+                <AnimatePresence mode="wait">
+                  {saveStatus === 'saving' && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      className="flex items-center gap-2 text-xs text-slate-400"
+                    >
+                      <motion.div
+                        className="w-2 h-2 rounded-full bg-violet-500"
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ duration: 1, repeat: Infinity }}
+                      />
+                      <span>Saving...</span>
+                    </motion.div>
+                  )}
+                  {saveStatus === 'saved' && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      className="flex items-center gap-2 text-xs text-emerald-400"
+                    >
+                      <Check size={14} />
+                      <span>Saved</span>
+                    </motion.div>
+                  )}
+                  {saveStatus === 'error' && errorMessage && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      className="flex items-center gap-2 text-xs text-red-400"
+                      title={errorMessage}
+                    >
+                      <AlertCircle size={14} />
+                      <span>Error</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <motion.button
+                  onClick={() => handleUpdateNote(activeNote.id, { isPinned: !activeNote.isPinned })}
+                  className={`p-2.5 rounded-lg transition-all ${
+                    activeNote.isPinned
+                      ? 'text-violet-400 bg-violet-500/20 border border-violet-500/30'
+                      : 'text-slate-500 hover:text-white hover:bg-white/5 border border-transparent'
+                  }`}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Pin size={20} className={activeNote.isPinned ? 'fill-current rotate-45' : ''} />
+                </motion.button>
+              </div>
             </div>
 
             {/* Metadata */}
@@ -266,7 +350,24 @@ export const Notes: React.FC<NotesProps> = ({ accent }) => {
               <span>Last edited: {format(activeNote.updatedAt, 'MMM d, yyyy h:mm a')}</span>
               <span>•</span>
               <span>{activeNote.content?.length || 0} characters</span>
+              <span>•</span>
+              <span>{activeNote.content?.split(/\s+/).filter(Boolean).length || 0} words</span>
             </div>
+
+            {/* Error Message */}
+            <AnimatePresence>
+              {errorMessage && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10, height: 0 }}
+                  animate={{ opacity: 1, y: 0, height: 'auto' }}
+                  exit={{ opacity: 0, y: -10, height: 0 }}
+                  className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2 text-sm text-red-400"
+                >
+                  <AlertCircle size={16} />
+                  <span>{errorMessage}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Content */}
             <textarea

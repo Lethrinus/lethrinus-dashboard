@@ -21,7 +21,7 @@ import {
 import { User, AccentColor } from '../types';
 import { api } from '../services/api';
 import { CommandPalette } from './CommandPalette';
-import { ParticlesField, AuroraBackground, Magnet, PageTransition, CyberCat } from './Animations';
+import { ParticlesField, AuroraBackground, Magnet, PageTransition, CyberCat, ScrollProgress, GlassCard, GradientText } from './Animations';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -121,8 +121,9 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, accent, onLogout
     >
       <SystemMascot accent={accent} />
       <CommandPalette isOpen={isCmdOpen} onClose={() => setIsCmdOpen(false)} accent={accent} />
+      <ScrollProgress color="#8b5cf6" />
 
-      {/* Background Effects - New beautiful animations */}
+      {/* Background Effects - Enhanced animations */}
       <AuroraBackground colorStops={['#8b5cf6', '#6366f1', '#3b82f6', '#8b5cf6']} speed={0.3} blur={180} />
       <ParticlesField color="#8b5cf6" particleCount={40} speed={0.3} connectionDistance={100} showConnections={true} />
 
@@ -175,27 +176,33 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, accent, onLogout
                 <Terminal size={20} />
               </motion.div>
               <div>
-                <h1 className="text-lg font-bold text-white tracking-wide">LETHRINUS</h1>
+                <GradientText
+                  text="LETHRINUS"
+                  className="text-lg font-bold tracking-wide block"
+                  gradient={['#8b5cf6', '#6366f1', '#8b5cf6']}
+                />
                 <p className="text-[10px] text-slate-500 font-medium">Personal OS v5.2</p>
               </div>
             </motion.div>
 
-            {/* Command Palette Button */}
-            <motion.button
-              onClick={() => setIsCmdOpen(true)}
-              className="w-full flex items-center justify-between px-3 py-2.5 bg-white/5 border border-white/5 rounded-lg text-xs text-slate-400 hover:bg-white/10 hover:border-white/10 transition-all group"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <div className="flex items-center gap-2">
-                <Command size={14} />
-                <span className="hidden sm:inline">Quick Actions</span>
-              </div>
-              <span className="text-slate-600 bg-black/30 px-1.5 py-0.5 rounded text-[10px] font-mono">⌘K</span>
-            </motion.button>
+            {/* Command Palette Button - Enhanced */}
+            <GlassCard className="p-0 overflow-hidden" blur={8} opacity={0.05}>
+              <motion.button
+                onClick={() => setIsCmdOpen(true)}
+                className="w-full flex items-center justify-between px-3 py-2.5 text-xs text-slate-400 hover:text-white transition-all group relative"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <div className="flex items-center gap-2 relative z-10">
+                  <Command size={14} className="group-hover:rotate-12 transition-transform" />
+                  <span className="hidden sm:inline">Quick Actions</span>
+                </div>
+                <span className="text-slate-600 bg-black/30 px-1.5 py-0.5 rounded text-[10px] font-mono relative z-10">⌘K</span>
+              </motion.button>
+            </GlassCard>
           </div>
 
           <div className="px-6 my-2">

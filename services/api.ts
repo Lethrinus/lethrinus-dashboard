@@ -108,40 +108,57 @@ class ApiService {
     // --- Journal ---
 
     async getJournalEntries(): Promise<JournalEntry[]> {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            console.warn('No authenticated user, returning empty journal entries');
+            return [];
+        }
+
         const { data, error } = await supabase
             .from('journal')
             .select('*')
+            .eq('user_id', user.id)
             .order('date', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+            console.error('Failed to fetch journal entries:', error);
+            throw error;
+        }
 
         // Map snake_case DB to camelCase Types
         return (data || []).map((row: any) => ({
             id: row.id,
             date: row.date,
-            title: row.title,
-            content: row.content,
-            mood: row.mood,
+            title: row.title || '',
+            content: row.content || '',
+            mood: row.mood || 'neutral',
             tags: row.tags || [],
             images: row.images || [],
-            spotifyEmbed: row.spotify_embed,
-            createdAt: new Date(row.created_at).getTime()
+            spotifyEmbed: row.spotify_embed || '',
+            createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now()
         }));
     }
 
     async saveJournalEntry(entry: JournalEntry): Promise<JournalEntry> {
-        // Check if ID is a UUID (Supabase uses UUIDs). If it's a temp Math.random ID, we let Supabase generate a new one or handle upsert logic.
-        // For simplicity, we assume 'entry.id' from the frontend might be temporary if it's new.
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+            throw new Error('You must be logged in to save journal entries');
+        }
 
-        const payload = {
+        // Ensure user_id is valid UUID
+        if (!user.id || typeof user.id !== 'string') {
+            throw new Error('Invalid user session. Please log in again.');
+        }
+
+        const payload: any = {
             date: entry.date,
-            title: entry.title,
-            content: entry.content,
-            mood: entry.mood,
-            tags: entry.tags,
-            images: entry.images,
-            spotify_embed: entry.spotifyEmbed,
-            user_id: (await supabase.auth.getUser()).data.user?.id
+            title: entry.title || '',
+            content: entry.content || '',
+            mood: entry.mood || 'neutral',
+            tags: entry.tags || [],
+            images: entry.images || [],
+            spotify_embed: entry.spotifyEmbed || '',
+            user_id: user.id
         };
 
         let result;
@@ -150,14 +167,21 @@ class ApiService {
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(entry.id);
 
         if (isUuid) {
-            // Update existing
+            // Update existing - also check user_id for security
             const { data, error } = await supabase
                 .from('journal')
                 .update(payload)
                 .eq('id', entry.id)
+                .eq('user_id', user.id)
                 .select()
                 .single();
-            if (error) throw error;
+            if (error) {
+                console.error('Failed to update journal entry:', error);
+                throw error;
+            }
+            if (!data) {
+                throw new Error('Journal entry not found or access denied');
+            }
             result = data;
         } else {
             // Insert new
@@ -166,26 +190,64 @@ class ApiService {
                 .insert(payload)
                 .select()
                 .single();
-            if (error) throw error;
+            if (error) {
+                console.error('Failed to create journal entry:', error);
+                throw error;
+            }
             result = data;
         }
 
         return {
             ...entry,
             id: result.id,
-            createdAt: new Date(result.created_at).getTime()
+            date: result.date,
+            title: result.title || '',
+            content: result.content || '',
+            mood: result.mood || 'neutral',
+            tags: result.tags || [],
+            images: result.images || [],
+            spotifyEmbed: result.spotify_embed || '',
+            createdAt: result.created_at ? new Date(result.created_at).getTime() : Date.now()
         };
+    }
+
+    async deleteJournalEntry(id: string): Promise<void> {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            throw new Error('You must be logged in to delete journal entries');
+        }
+
+        const { error } = await supabase
+            .from('journal')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', user.id);
+
+        if (error) {
+            console.error('Failed to delete journal entry:', error);
+            throw error;
+        }
     }
 
     // --- Tasks ---
 
     async getTasks(): Promise<Task[]> {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            console.warn('No authenticated user, returning empty tasks');
+            return [];
+        }
+
         const { data, error } = await supabase
             .from('tasks')
             .select('*')
+            .eq('user_id', user.id)
             .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+            console.error('Failed to fetch tasks:', error);
+            throw error;
+        }
 
         return (data || []).map((row: any) => ({
             id: row.id,
@@ -201,28 +263,52 @@ class ApiService {
     }
 
     async saveTask(task: Task): Promise<Task> {
-        const payload = {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            throw new Error('You must be logged in to save tasks');
+        }
+
+        const payload: any = {
             title: task.title,
-            description: task.description,
+            description: task.description || '',
             due_date: task.dueDate,
             status: task.status,
             priority: task.priority,
-            tags: task.tags,
-            category: task.category,
-            subtasks: task.subtasks,
-            user_id: (await supabase.auth.getUser()).data.user?.id
+            tags: task.tags || [],
+            category: task.category || 'General',
+            subtasks: task.subtasks || [],
+            user_id: user.id
         };
 
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(task.id);
         let result;
 
         if (isUuid) {
-            const { data, error } = await supabase.from('tasks').update(payload).eq('id', task.id).select().single();
-            if(error) throw error;
+            const { data, error } = await supabase
+                .from('tasks')
+                .update(payload)
+                .eq('id', task.id)
+                .eq('user_id', user.id)
+                .select()
+                .single();
+            if (error) {
+                console.error('Failed to update task:', error);
+                throw error;
+            }
+            if (!data) {
+                throw new Error('Task not found or access denied');
+            }
             result = data;
         } else {
-            const { data, error } = await supabase.from('tasks').insert(payload).select().single();
-            if(error) throw error;
+            const { data, error } = await supabase
+                .from('tasks')
+                .insert(payload)
+                .select()
+                .single();
+            if (error) {
+                console.error('Failed to create task:', error);
+                throw error;
+            }
             result = data;
         }
 
@@ -233,59 +319,121 @@ class ApiService {
     }
 
     async deleteTask(id: string): Promise<void> {
-        const { error } = await supabase.from('tasks').delete().eq('id', id);
-        if (error) throw error;
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            throw new Error('You must be logged in to delete tasks');
+        }
+
+        const { error } = await supabase
+            .from('tasks')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', user.id);
+        if (error) {
+            console.error('Failed to delete task:', error);
+            throw error;
+        }
     }
 
     // --- Notes ---
 
     async getNotes(): Promise<Note[]> {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            console.warn('No authenticated user, returning empty notes');
+            return [];
+        }
+
         const { data, error } = await supabase
             .from('notes')
             .select('*')
+            .eq('user_id', user.id)
             .order('updated_at', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+            console.error('Failed to fetch notes:', error);
+            throw error;
+        }
 
         return (data || []).map((row: any) => ({
             id: row.id,
-            title: row.title,
-            content: row.content,
+            title: row.title || '',
+            content: row.content || '',
             folderId: row.folder_id,
-            isPinned: row.is_pinned,
-            updatedAt: new Date(row.updated_at).getTime()
+            isPinned: row.is_pinned || false,
+            updatedAt: row.updated_at ? new Date(row.updated_at).getTime() : Date.now()
         }));
     }
 
     async saveNote(note: Note): Promise<Note> {
-        const payload = {
-            title: note.title,
-            content: note.content,
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            throw new Error('You must be logged in to save notes');
+        }
+
+        const payload: any = {
+            title: note.title || '',
+            content: note.content || '',
             folder_id: note.folderId,
-            is_pinned: note.isPinned,
+            is_pinned: note.isPinned || false,
             updated_at: new Date().toISOString(),
-            user_id: (await supabase.auth.getUser()).data.user?.id
+            user_id: user.id
         };
 
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(note.id);
         let result;
 
         if (isUuid) {
-            const { data, error } = await supabase.from('notes').update(payload).eq('id', note.id).select().single();
-            if(error) throw error;
+            const { data, error } = await supabase
+                .from('notes')
+                .update(payload)
+                .eq('id', note.id)
+                .eq('user_id', user.id)
+                .select()
+                .single();
+            if (error) {
+                console.error('Failed to update note:', error);
+                throw error;
+            }
+            if (!data) {
+                throw new Error('Note not found or access denied');
+            }
             result = data;
         } else {
-            const { data, error } = await supabase.from('notes').insert(payload).select().single();
-            if(error) throw error;
+            const { data, error } = await supabase
+                .from('notes')
+                .insert(payload)
+                .select()
+                .single();
+            if (error) {
+                console.error('Failed to create note:', error);
+                throw error;
+            }
             result = data;
         }
 
-        return { ...note, id: result.id };
+        return {
+            ...note,
+            id: result.id,
+            updatedAt: result.updated_at ? new Date(result.updated_at).getTime() : Date.now()
+        };
     }
 
     async deleteNote(id: string): Promise<void> {
-        const { error } = await supabase.from('notes').delete().eq('id', id);
-        if (error) throw error;
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            throw new Error('You must be logged in to delete notes');
+        }
+
+        const { error } = await supabase
+            .from('notes')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', user.id);
+        if (error) {
+            console.error('Failed to delete note:', error);
+            throw error;
+        }
     }
 
     // --- Files ---
@@ -293,8 +441,17 @@ class ApiService {
     // For now, we will assume a metadata table 'files' exists as described in the DB plan.
 
     async getFiles(): Promise<FileItem[]> {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            console.warn('No authenticated user, returning empty files');
+            return [];
+        }
+
         // If 'files' table doesn't exist yet, we return empty to prevent crash
-        const { data, error } = await supabase.from('files').select('*');
+        const { data, error } = await supabase
+            .from('files')
+            .select('*')
+            .eq('user_id', user.id);
         if (error) {
             console.warn("Could not fetch files (Table might not exist yet)", error);
             return [];
@@ -307,41 +464,101 @@ class ApiService {
             type: row.type,
             size: row.size,
             mimeType: row.mime_type,
-            uploadDate: new Date(row.created_at).getTime()
+            uploadDate: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
+            storagePath: row.storage_path,
+            publicUrl: row.public_url
         }));
     }
 
     async createFolder(name: string, parentId: string | null): Promise<FileItem> {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            throw new Error('You must be logged in to create folders');
+        }
+
         const payload = {
             name,
             folder_id: parentId,
             type: 'folder',
-            user_id: (await supabase.auth.getUser()).data.user?.id
+            user_id: user.id
         };
-        const { data, error } = await supabase.from('files').insert(payload).select().single();
-        if(error) throw error;
+        const { data, error } = await supabase
+            .from('files')
+            .insert(payload)
+            .select()
+            .single();
+        if (error) {
+            console.error('Failed to create folder:', error);
+            throw error;
+        }
 
         return {
             id: data.id,
             name: data.name,
             folderId: data.folder_id,
             type: 'folder',
-            uploadDate: Date.now()
+            uploadDate: data.created_at ? new Date(data.created_at).getTime() : Date.now()
         };
     }
 
-    async uploadFile(name: string, size: number, mimeType: string, parentId: string | null): Promise<FileItem> {
-        // NOTE: This only creates metadata. Real file upload to Storage Bucket would happen here.
-        const payload = {
-            name,
-            size,
-            mime_type: mimeType,
+    async uploadFile(file: File, parentId: string | null): Promise<FileItem> {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            throw new Error('You must be logged in to upload files');
+        }
+
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${user.id}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = parentId ? `${parentId}/${fileName}` : fileName;
+
+        // Upload to Supabase Storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('files')
+            .upload(filePath, file, {
+                cacheControl: '3600',
+                upsert: false
+            });
+
+        if (uploadError) {
+            console.error('Failed to upload file to storage:', uploadError);
+            // If storage upload fails, still create metadata (for compatibility)
+            // In production, you might want to throw the error
+        }
+
+        // Get public URL (if storage upload succeeded)
+        let publicUrl: string | null = null;
+        if (!uploadError) {
+            const { data: urlData } = supabase.storage
+                .from('files')
+                .getPublicUrl(filePath);
+            publicUrl = urlData.publicUrl;
+        }
+
+        // Create metadata in database
+        const payload: any = {
+            name: file.name,
+            size: file.size,
+            mime_type: file.type,
             folder_id: parentId,
             type: 'file',
-            user_id: (await supabase.auth.getUser()).data.user?.id
+            user_id: user.id
         };
+
+        // Add storage info if upload succeeded
+        if (!uploadError && uploadData) {
+            payload.storage_path = filePath;
+            payload.public_url = publicUrl;
+        }
+
         const { data, error } = await supabase.from('files').insert(payload).select().single();
-        if(error) throw error;
+        if (error) {
+            // If database insert fails and we uploaded to storage, try to clean up
+            if (!uploadError && uploadData) {
+                await supabase.storage.from('files').remove([filePath]);
+            }
+            console.error('Failed to create file metadata:', error);
+            throw error;
+        }
 
         return {
             id: data.id,
@@ -350,55 +567,136 @@ class ApiService {
             type: 'file',
             size: data.size,
             mimeType: data.mime_type,
-            uploadDate: Date.now()
+            uploadDate: data.created_at ? new Date(data.created_at).getTime() : Date.now(),
+            storagePath: data.storage_path,
+            publicUrl: data.public_url
         };
     }
 
+    async getFileUrl(fileId: string): Promise<string | null> {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            throw new Error('You must be logged in to access files');
+        }
+
+        const { data, error } = await supabase
+            .from('files')
+            .select('storage_path, public_url')
+            .eq('id', fileId)
+            .eq('user_id', user.id)
+            .single();
+
+        if (error || !data) {
+            return null;
+        }
+
+        // If we have a public URL, return it
+        if (data.public_url) {
+            return data.public_url;
+        }
+
+        // Otherwise, generate signed URL
+        if (data.storage_path) {
+            const { data: urlData } = await supabase.storage
+                .from('files')
+                .createSignedUrl(data.storage_path, 3600);
+
+            return urlData?.signedUrl || null;
+        }
+
+        return null;
+    }
+
     async deleteFileItem(id: string): Promise<void> {
-        const { error } = await supabase.from('files').delete().eq('id', id);
-        if(error) throw error;
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            throw new Error('You must be logged in to delete files');
+        }
+
+        const { error } = await supabase
+            .from('files')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', user.id);
+        if (error) {
+            console.error('Failed to delete file:', error);
+            throw error;
+        }
     }
 
     // --- Media ---
 
     async getMedia(): Promise<MediaItem[]> {
-        const { data, error } = await supabase.from('media').select('*');
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            console.warn('No authenticated user, returning empty media');
+            return [];
+        }
+
+        const { data, error } = await supabase
+            .from('media')
+            .select('*')
+            .eq('user_id', user.id);
         if (error) {
             console.warn("Could not fetch media", error);
             return [];
         }
         return (data || []).map((row: any) => ({
             id: row.id,
-            title: row.title,
+            title: row.title || '',
             type: row.type,
             status: row.status,
-            rating: row.rating,
+            rating: row.rating || 0,
             year: row.year,
             image: row.image
         }));
     }
 
     async saveMedia(item: MediaItem): Promise<MediaItem> {
-        const payload = {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            throw new Error('You must be logged in to save media');
+        }
+
+        const payload: any = {
             title: item.title,
             type: item.type,
             status: item.status,
-            rating: item.rating,
+            rating: item.rating || 0,
             year: item.year,
             image: item.image,
-            user_id: (await supabase.auth.getUser()).data.user?.id
+            user_id: user.id
         };
 
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.id);
         let result;
 
         if (isUuid) {
-            const { data, error } = await supabase.from('media').update(payload).eq('id', item.id).select().single();
-            if(error) throw error;
+            const { data, error } = await supabase
+                .from('media')
+                .update(payload)
+                .eq('id', item.id)
+                .eq('user_id', user.id)
+                .select()
+                .single();
+            if (error) {
+                console.error('Failed to update media:', error);
+                throw error;
+            }
+            if (!data) {
+                throw new Error('Media item not found or access denied');
+            }
             result = data;
         } else {
-            const { data, error } = await supabase.from('media').insert(payload).select().single();
-            if(error) throw error;
+            const { data, error } = await supabase
+                .from('media')
+                .insert(payload)
+                .select()
+                .single();
+            if (error) {
+                console.error('Failed to create media:', error);
+                throw error;
+            }
             result = data;
         }
 
@@ -406,8 +704,20 @@ class ApiService {
     }
 
     async deleteMedia(id: string): Promise<void> {
-        const { error } = await supabase.from('media').delete().eq('id', id);
-        if(error) throw error;
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            throw new Error('You must be logged in to delete media');
+        }
+
+        const { error } = await supabase
+            .from('media')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', user.id);
+        if (error) {
+            console.error('Failed to delete media:', error);
+            throw error;
+        }
     }
 }
 

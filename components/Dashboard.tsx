@@ -28,6 +28,12 @@ import {
   CardHover,
   ProgressBar,
   Skeleton,
+  TiltCard,
+  GlassCard,
+  GradientText,
+  Shimmer,
+  BorderGlow,
+  AnimatedCounter,
 } from './Animations';
 
 interface DashboardProps {
@@ -161,86 +167,113 @@ export const Dashboard: React.FC<DashboardProps> = ({ accent }) => {
         </SpotlightCard>
       </motion.div>
 
-      {/* Stats Overview */}
-      <motion.div variants={itemVariants} className="grid grid-cols-3 gap-4">
-        <CardHover className="bg-[#131316] rounded-xl border border-white/10 p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-violet-500/10">
-              <TrendingUp size={18} className="text-violet-400" />
+      {/* Stats Overview - Enhanced with new animations */}
+      <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <TiltCard intensity={10}>
+          <GlassCard className="p-6 relative overflow-hidden group">
+            <Shimmer className="absolute inset-0" />
+            <div className="flex items-center gap-4 relative z-10">
+              <motion.div
+                className="p-3 rounded-xl bg-gradient-to-br from-violet-500/20 to-violet-600/20 border border-violet-500/30"
+                whileHover={{ rotate: 360, scale: 1.1 }}
+                transition={{ duration: 0.5 }}
+              >
+                <TrendingUp size={20} className="text-violet-400" />
+              </motion.div>
+              <div className="flex-1">
+                <p className="text-3xl font-bold text-white mb-1">
+                  <AnimatedCounter value={completionRate} />%
+                </p>
+                <p className="text-xs text-slate-400 uppercase tracking-wider">Quest Completion</p>
+              </div>
             </div>
-            <div>
-              <p className="text-2xl font-bold text-white">{completionRate}%</p>
-              <p className="text-xs text-slate-500">Quest Completion</p>
+            <div className="mt-4 relative z-10">
+              <ProgressBar progress={completionRate} color="#8b5cf6" />
             </div>
-          </div>
-          <ProgressBar progress={completionRate} color="#8b5cf6" />
-        </CardHover>
+          </GlassCard>
+        </TiltCard>
 
-        <CardHover className="bg-[#131316] rounded-xl border border-white/10 p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-emerald-500/10">
-              <CheckCircle2 size={18} className="text-emerald-400" />
+        <TiltCard intensity={10}>
+          <GlassCard className="p-6 relative overflow-hidden group">
+            <Shimmer className="absolute inset-0" />
+            <div className="flex items-center gap-4 relative z-10">
+              <motion.div
+                className="p-3 rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/20 border border-emerald-500/30"
+                whileHover={{ rotate: 360, scale: 1.1 }}
+                transition={{ duration: 0.5 }}
+              >
+                <CheckCircle2 size={20} className="text-emerald-400" />
+              </motion.div>
+              <div className="flex-1">
+                <p className="text-3xl font-bold text-white mb-1">
+                  <AnimatedCounter value={stats.completed} />
+                </p>
+                <p className="text-xs text-slate-400 uppercase tracking-wider">Quests Completed</p>
+              </div>
             </div>
-            <div>
-              <p className="text-2xl font-bold text-white">{stats.completed}</p>
-              <p className="text-xs text-slate-500">Quests Completed</p>
-            </div>
-          </div>
-        </CardHover>
+          </GlassCard>
+        </TiltCard>
 
-        <CardHover className="bg-[#131316] rounded-xl border border-white/10 p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-amber-500/10">
-              <Zap size={18} className="text-amber-400" />
+        <TiltCard intensity={10}>
+          <GlassCard className="p-6 relative overflow-hidden group">
+            <Shimmer className="absolute inset-0" />
+            <div className="flex items-center gap-4 relative z-10">
+              <motion.div
+                className="p-3 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/20 border border-amber-500/30"
+                whileHover={{ rotate: 360, scale: 1.1 }}
+                transition={{ duration: 0.5 }}
+              >
+                <Zap size={20} className="text-amber-400" />
+              </motion.div>
+              <div className="flex-1">
+                <p className="text-3xl font-bold text-white mb-1">
+                  <AnimatedCounter value={stats.streak} />
+                </p>
+                <p className="text-xs text-slate-400 uppercase tracking-wider">Day Streak</p>
+              </div>
             </div>
-            <div>
-              <p className="text-2xl font-bold text-white">{stats.streak}</p>
-              <p className="text-xs text-slate-500">Day Streak</p>
-            </div>
-          </div>
-        </CardHover>
+          </GlassCard>
+        </TiltCard>
       </motion.div>
 
-      {/* Quick Access Grid */}
+      {/* Quick Access Grid - Enhanced with BorderGlow */}
       <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { icon: CalendarDays, label: "Captain's Log", path: '/journal', color: 'violet' },
-          { icon: CheckCircle2, label: 'Active Quests', path: '/tasks', color: 'blue' },
-          { icon: FileText, label: 'Archives', path: '/notes', color: 'emerald' },
-          { icon: Upload, label: 'Inventory', path: '/files', color: 'amber' },
+          { icon: CalendarDays, label: "Captain's Log", path: '/journal', color: '#8b5cf6' },
+          { icon: CheckCircle2, label: 'Active Quests', path: '/tasks', color: '#3b82f6' },
+          { icon: FileText, label: 'Archives', path: '/notes', color: '#10b981' },
+          { icon: Upload, label: 'Inventory', path: '/files', color: '#f59e0b' },
         ].map((item, index) => (
-          <Magnet key={item.path} strength={10} activeScale={1.05} className="h-full">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.1 * index }}
-            >
-              <SpotlightCard className="relative group overflow-hidden h-full">
-                <motion.button
-                  onClick={() => navigate(item.path)}
-                  className="w-full h-full p-6 flex flex-col items-center gap-3 relative z-10"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <motion.div
-                    className={`p-3 rounded-full bg-${item.color}-500/20 text-${item.color}-400`}
-                    whileHover={{ rotate: 360, scale: 1.1 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <item.icon size={24} />
-                  </motion.div>
-                  <span className="text-sm font-bold text-slate-200 tracking-wide uppercase">
-                    {item.label}
-                  </span>
-                </motion.button>
-
-                {/* Hover gradient */}
+          <motion.div
+            key={item.path}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 * index, type: 'spring', stiffness: 200 }}
+          >
+            <BorderGlow color={item.color} intensity={0.6}>
+              <motion.button
+                onClick={() => navigate(item.path)}
+                className="w-full h-full p-6 flex flex-col items-center gap-4 relative z-10 group"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
                 <motion.div
-                  className={`absolute inset-0 bg-gradient-to-t from-${item.color}-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none`}
+                  className="p-4 rounded-2xl relative overflow-hidden"
+                  style={{ backgroundColor: `${item.color}20` }}
+                  whileHover={{ rotate: 360 }}
+                  transition={{ duration: 0.6 }}
+                >
+                  <item.icon size={28} style={{ color: item.color }} />
+                  <Shimmer className="absolute inset-0" />
+                </motion.div>
+                <GradientText
+                  text={item.label}
+                  className="text-sm font-bold tracking-wide uppercase"
+                  gradient={[item.color, item.color + '80', item.color]}
                 />
-              </SpotlightCard>
-            </motion.div>
-          </Magnet>
+              </motion.button>
+            </BorderGlow>
+          </motion.div>
         ))}
       </motion.div>
 
