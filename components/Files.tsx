@@ -26,8 +26,8 @@ interface FilesProps {
 }
 
 const getFileIcon = (item: FileItem) => {
-  if (item.type === 'folder') return { icon: Folder, color: 'text-violet-400', bg: 'bg-violet-500/20' };
-  if (item.mimeType?.startsWith('image')) return { icon: ImageIcon, color: 'text-pink-400', bg: 'bg-pink-500/20' };
+  if (item.type === 'folder') return { icon: Folder, color: 'text-white-400', bg: 'bg-white-500/20' };
+  if (item.mimeType?.startsWith('image')) return { icon: ImageIcon, color: 'text-white-400', bg: 'bg-white-500/20' };
   if (item.mimeType?.startsWith('video')) return { icon: Video, color: 'text-blue-400', bg: 'bg-blue-500/20' };
   if (item.mimeType?.startsWith('audio')) return { icon: Music, color: 'text-emerald-400', bg: 'bg-emerald-500/20' };
   return { icon: FileText, color: 'text-slate-400', bg: 'bg-slate-500/20' };
@@ -142,7 +142,7 @@ const ImagePreview: React.FC<{
       {loading ? (
         <div className="w-full h-full flex items-center justify-center bg-black/20">
           <motion.div
-            className="w-8 h-8 border-2 border-violet-500/30 border-t-violet-500 rounded-full"
+            className="w-8 h-8 border-2 border-white-500/30 border-t-white-500 rounded-full"
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
           />
@@ -265,7 +265,7 @@ export const Files: React.FC<FilesProps> = ({ accent }) => {
       >
         <div className="flex items-center gap-3">
           <motion.div
-            className="p-2.5 rounded-xl bg-violet-500/20 text-violet-400"
+            className="p-2.5 rounded-xl bg-white-500/20 text-white-400"
             whileHover={{ rotate: 10 }}
           >
             <HardDrive size={24} />
@@ -289,7 +289,7 @@ export const Files: React.FC<FilesProps> = ({ accent }) => {
           </motion.button>
           <label>
             <motion.div
-              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-violet-600 to-violet-700 text-white rounded-xl hover:from-violet-500 hover:to-violet-600 transition-all cursor-pointer font-bold text-sm uppercase tracking-wide shadow-lg shadow-violet-500/25"
+              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-white-600 to-white-700 text-white rounded-xl hover:from-white-500 hover:to-white-600 transition-all cursor-pointer font-bold text-sm uppercase tracking-wide shadow-lg shadow-white-500/25"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
@@ -481,7 +481,7 @@ export const Files: React.FC<FilesProps> = ({ accent }) => {
       <ModalWrapper isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
         <div className="bg-[#131316] rounded-xl w-full max-w-md p-6 border border-white/10">
           <h2 className="text-lg font-bold mb-6 text-white flex items-center gap-2">
-            <FolderPlus size={20} className="text-violet-500" />
+            <FolderPlus size={20} className="text-white-500" />
             Create New Folder
           </h2>
           <form
@@ -495,7 +495,7 @@ export const Files: React.FC<FilesProps> = ({ accent }) => {
               placeholder="Folder name"
               value={newFolderName}
               onChange={e => setNewFolderName(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-lg bg-black/30 border border-white/10 text-white focus:border-violet-500 outline-none transition-colors mb-4"
+              className="w-full px-4 py-2.5 rounded-lg bg-black/30 border border-white/10 text-white focus:border-white-500 outline-none transition-colors mb-4"
               autoFocus
             />
             <div className="flex justify-end gap-2">
@@ -510,7 +510,7 @@ export const Files: React.FC<FilesProps> = ({ accent }) => {
               </motion.button>
               <motion.button
                 type="submit"
-                className="px-6 py-2 bg-gradient-to-r from-violet-600 to-violet-700 text-white rounded-lg text-xs font-bold uppercase shadow-lg shadow-violet-500/25"
+                className="px-6 py-2 bg-gradient-to-r from-white-600 to-white-700 text-white rounded-lg text-xs font-bold uppercase shadow-lg shadow-white-500/25"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >

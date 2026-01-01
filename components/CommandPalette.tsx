@@ -139,13 +139,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
                       onMouseEnter={() => setSelectedIndex(index)}
                       className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all ${
                         index === selectedIndex
-                          ? 'bg-violet-500/20 text-white border border-violet-500/30'
+                          ? 'bg-white/20 text-white border border-white/30'
                           : 'text-slate-400 hover:bg-white/5'
                       }`}
                     >
                       <motion.div
                         whileHover={{ rotate: 10 }}
-                        className={index === selectedIndex ? 'text-violet-400' : ''}
+                        className={index === selectedIndex ? 'text-white' : ''}
                       >
                         <cmd.icon size={18} />
                       </motion.div>
@@ -157,7 +157,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
                           className="flex items-center gap-2 text-slate-500"
                         >
                           <span className="text-[10px] font-mono">↵ Enter</span>
-                          <ArrowRight size={14} className="text-violet-400" />
+                          <ArrowRight size={14} className="text-white" />
                         </motion.div>
                       )}
                     </motion.button>

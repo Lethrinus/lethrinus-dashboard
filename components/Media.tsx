@@ -104,7 +104,7 @@ export const Media: React.FC<MediaProps> = ({ accent }) => {
       >
         <div className="flex items-center gap-3">
           <motion.div
-            className="p-2.5 rounded-xl bg-violet-500/20 text-violet-400"
+            className="p-2.5 rounded-xl bg-white-500/20 text-white-400"
             animate={{ rotate: [0, 5, -5, 0] }}
             transition={{ duration: 4, repeat: Infinity }}
           >
@@ -130,13 +130,13 @@ export const Media: React.FC<MediaProps> = ({ accent }) => {
               placeholder="Search library..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="pl-9 pr-4 py-2.5 rounded-xl bg-[#131316] border border-white/10 text-white placeholder-slate-600 focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 outline-none w-full md:w-64 transition-all"
+              className="pl-9 pr-4 py-2.5 rounded-xl bg-[#131316] border border-white/10 text-white placeholder-slate-600 focus:ring-2 focus:ring-white-500/50 focus:border-white-500 outline-none w-full md:w-64 transition-all"
             />
           </motion.div>
 
           <motion.button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-600 to-violet-700 text-white rounded-xl hover:from-violet-500 hover:to-violet-600 shadow-lg shadow-violet-500/25 transition-all font-bold tracking-wide uppercase text-xs"
+            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-white-600 to-white-700 text-white rounded-xl hover:from-white-500 hover:to-white-600 shadow-lg shadow-white-500/25 transition-all font-bold tracking-wide uppercase text-xs"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             initial={{ x: 20, opacity: 0 }}
@@ -169,7 +169,7 @@ export const Media: React.FC<MediaProps> = ({ accent }) => {
               className={`
                 px-4 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2
                 ${filter === f
-                  ? 'bg-violet-500 text-white shadow-lg shadow-violet-500/25'
+                  ? 'bg-white-500 text-white shadow-lg shadow-white-500/25'
                   : 'bg-[#131316] text-slate-500 border border-white/10 hover:bg-white/5 hover:text-white'
                 }
               `}
@@ -211,7 +211,7 @@ export const Media: React.FC<MediaProps> = ({ accent }) => {
                   className="group relative"
                   layout
                 >
-                  <CardHover className="bg-[#131316] rounded-2xl overflow-hidden border border-white/5 hover:border-violet-500/30 h-full">
+                  <CardHover className="bg-[#131316] rounded-2xl overflow-hidden border border-white/5 hover:border-white-500/30 h-full">
                     {/* Poster Image */}
                     <div className="aspect-[2/3] w-full relative overflow-hidden bg-slate-900">
                       <motion.img
@@ -306,7 +306,7 @@ export const Media: React.FC<MediaProps> = ({ accent }) => {
         <div className="bg-[#131316] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
           <div className="p-6 border-b border-white/5 flex justify-between items-center">
             <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <Clapperboard size={20} className="text-violet-500" />
+              <Clapperboard size={20} className="text-white-500" />
               Add to Library
             </h2>
             <motion.button
@@ -325,7 +325,7 @@ export const Media: React.FC<MediaProps> = ({ accent }) => {
               <input
                 type="text"
                 required
-                className="w-full px-4 py-2.5 rounded-lg bg-black/30 border border-white/10 text-white focus:ring-1 focus:ring-violet-500 outline-none transition-colors"
+                className="w-full px-4 py-2.5 rounded-lg bg-black/30 border border-white/10 text-white focus:ring-1 focus:ring-white-500 outline-none transition-colors"
                 placeholder="Movie or Show Title"
                 value={newItem.title}
                 onChange={e => setNewItem({ ...newItem, title: e.target.value })}
@@ -398,7 +398,7 @@ export const Media: React.FC<MediaProps> = ({ accent }) => {
 
             <motion.button
               type="submit"
-              className="w-full py-3 mt-4 bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-500 hover:to-violet-600 text-white font-bold uppercase tracking-wider rounded-xl transition-colors shadow-lg shadow-violet-500/25"
+              className="w-full py-3 mt-4 bg-gradient-to-r from-white-600 to-white-700 hover:from-white-500 hover:to-white-600 text-white font-bold uppercase tracking-wider rounded-xl transition-colors shadow-lg shadow-white-500/25"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >

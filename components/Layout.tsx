@@ -3,25 +3,24 @@ import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  LayoutDashboard,
-  Book,
-  CheckSquare,
-  StickyNote,
-  Folder,
-  Settings,
-  LogOut,
-  Menu,
-  User as UserIcon,
-  Bot,
-  Terminal,
-  Film,
-  Command,
-  X,
+    LayoutDashboard,
+    Book,
+    CheckSquare,
+    StickyNote,
+    Folder,
+    Settings,
+    LogOut,
+    Menu,
+    User as UserIcon,
+    Bot,
+    Terminal,
+    Film,
+    X, SnailIcon,
 } from 'lucide-react';
 import { User, AccentColor } from '../types';
 import { api } from '../services/api';
 import { CommandPalette } from './CommandPalette';
-import { ParticlesField, AuroraBackground, Magnet, PageTransition, CyberCat, ScrollProgress, GlassCard, GradientText } from './Animations';
+import { ParticlesField, AuroraBackground, Magnet, PageTransition, ScrollProgress, GlassCard, GradientText } from './Animations';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -54,19 +53,6 @@ const navItemVariants = {
   })
 };
 
-// System Mascot Component - Using CyberCat
-const SystemMascot: React.FC<{ accent: string }> = ({ accent }) => {
-  return (
-    <motion.div
-      className="fixed bottom-6 right-6 z-[60]"
-      initial={{ scale: 0, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{ delay: 1, type: 'spring' }}
-    >
-      <CyberCat size={80} showDialogue={false} />
-    </motion.div>
-  );
-};
 
 export const Layout: React.FC<LayoutProps> = ({ children, user, accent, onLogout }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -100,10 +86,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, accent, onLogout
 
   const navItems = [
     { to: '/', icon: LayoutDashboard, label: 'Control Center' },
-    { to: '/ai', icon: Bot, label: 'Cortex AI' },
-    { to: '/journal', icon: Book, label: "Captain's Log" },
+    { to: '/ai', icon: SnailIcon, label: 'AI Assistant' },
+    { to: '/journal', icon: Book, label: 'Diary' },
     { to: '/media', icon: Film, label: 'Holodeck' },
-    { to: '/tasks', icon: CheckSquare, label: 'Quests' },
+    { to: '/tasks', icon: CheckSquare, label: 'Tasks' },
     { to: '/notes', icon: StickyNote, label: 'Archives' },
     { to: '/files', icon: Folder, label: 'Storage' },
     { to: '/settings', icon: Settings, label: 'Options' },
@@ -119,18 +105,17 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, accent, onLogout
       ref={layoutRef}
       className="flex h-screen overflow-hidden bg-[#050505] font-sans text-slate-200"
     >
-      <SystemMascot accent={accent} />
       <CommandPalette isOpen={isCmdOpen} onClose={() => setIsCmdOpen(false)} accent={accent} />
-      <ScrollProgress color="#8b5cf6" />
+      <ScrollProgress color="#ffffff" />
 
       {/* Background Effects - Enhanced animations */}
-      <AuroraBackground colorStops={['#8b5cf6', '#6366f1', '#3b82f6', '#8b5cf6']} speed={0.3} blur={180} />
-      <ParticlesField color="#8b5cf6" particleCount={40} speed={0.3} connectionDistance={100} showConnections={true} />
+      <AuroraBackground colorStops={['#ffffff', '#888888', '#444444', '#ffffff']} speed={0.3} blur={180} />
+      <ParticlesField color="#ffffff" particleCount={40} speed={0.3} connectionDistance={100} showConnections={true} />
 
       <div className="fixed inset-0 z-0 pointer-events-none">
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] mix-blend-overlay" />
         <motion.div
-          className="absolute top-0 right-0 w-[600px] h-[600px] bg-violet-900/10 rounded-full blur-[150px]"
+          className="absolute top-0 right-0 w-[600px] h-[600px] bg-white/10 rounded-full blur-[150px]"
           animate={{
             scale: [1, 1.2, 1],
             opacity: [0.1, 0.2, 0.1],
@@ -169,40 +154,39 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, accent, onLogout
               transition={{ delay: 0.1 }}
             >
               <motion.div
-                className="w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br from-violet-600 to-violet-800 text-white shadow-lg shadow-violet-500/30"
-                whileHover={{ rotate: 180, scale: 1.1 }}
+                className="w-23 h-23 rounded-xl flex items-center justify-center"
+                scale={1.2}
+                whileHover={{ scale: 1.55 }}
                 transition={{ duration: 0.5 }}
               >
-                <Terminal size={20} />
+                <img
+                  src="/cat.gif"
+                  alt="Logo"
+                  className="w-full h-full object-contain"
+                  style={{
+                    filter: 'drop-shadow(0 0 15px rgba(255, 255, 255, 0.8))',
+                  }}
+
+                />
               </motion.div>
               <div>
-                <GradientText
-                  text="LETHRINUS"
-                  className="text-lg font-bold tracking-wide block"
-                  gradient={['#8b5cf6', '#6366f1', '#8b5cf6']}
-                />
-                <p className="text-[10px] text-slate-500 font-medium">Personal OS v5.2</p>
+                <motion.div
+                  className="relative"
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.2 }}
+                  style={{
+                    filter: 'drop-shadow(0 0 8px rgba(255, 255, 255, 0.6)) drop-shadow(0 0 16px rgba(255, 255, 255, 0.4))',
+                  }}
+                >
+                  <GradientText
+                    text="LETHRINUS"
+                    className="text-2xl font-black"
+                    gradient={['#ffffff', '#cccccc', '#ffffff']}
+                  />
+                </motion.div>
+                <p className="text-[10px] text-slate-500 font-medium"></p>
               </div>
             </motion.div>
-
-            {/* Command Palette Button - Enhanced */}
-            <GlassCard className="p-0 overflow-hidden" blur={8} opacity={0.05}>
-              <motion.button
-                onClick={() => setIsCmdOpen(true)}
-                className="w-full flex items-center justify-between px-3 py-2.5 text-xs text-slate-400 hover:text-white transition-all group relative"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <div className="flex items-center gap-2 relative z-10">
-                  <Command size={14} className="group-hover:rotate-12 transition-transform" />
-                  <span className="hidden sm:inline">Quick Actions</span>
-                </div>
-                <span className="text-slate-600 bg-black/30 px-1.5 py-0.5 rounded text-[10px] font-mono relative z-10">⌘K</span>
-              </motion.button>
-            </GlassCard>
           </div>
 
           <div className="px-6 my-2">
@@ -227,7 +211,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, accent, onLogout
                       className={`
                         group flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-lg transition-all w-full relative overflow-hidden
                         ${isActive
-                          ? 'bg-violet-500/10 text-violet-400'
+                          ? 'bg-white/10 text-white'
                           : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
                         }
                       `}
@@ -236,14 +220,14 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, accent, onLogout
                       {isActive && (
                         <motion.div
                           layoutId="activeNav"
-                          className="absolute left-0 top-0 bottom-0 w-0.5 bg-violet-500"
+                          className="absolute left-0 top-0 bottom-0 w-0.5 bg-white"
                           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
                         />
                       )}
 
                       <item.icon
                         size={16}
-                        className={`transition-all ${isActive ? 'text-violet-400' : 'opacity-70 group-hover:opacity-100'}`}
+                        className={`transition-all ${isActive ? 'text-white' : 'opacity-70 group-hover:opacity-100'}`}
                       />
                       <span className="flex-1">{item.label}</span>
 
@@ -251,7 +235,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, accent, onLogout
                         <motion.div
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
-                          className="w-1.5 h-1.5 rounded-full bg-violet-400"
+                          className="w-1.5 h-1.5 rounded-full bg-white"
                         />
                       )}
                     </NavLink>
@@ -270,7 +254,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, accent, onLogout
           >
             <div className="flex items-center gap-3 mb-3">
               <motion.div
-                className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-600 to-violet-800 flex items-center justify-center border border-violet-500/30 shadow-lg shadow-violet-500/20"
+                className="w-9 h-9 rounded-full bg-gradient-to-br from-white to-gray-800 flex items-center justify-center border border-white/70 shadow-lg shadow-white/30"
                 whileHover={{ scale: 1.1 }}
               >
                 <UserIcon size={16} className="text-white" />
@@ -283,7 +267,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, accent, onLogout
                     animate={{ scale: [1, 1.2, 1], opacity: [1, 0.7, 1] }}
                     transition={{ duration: 2, repeat: Infinity }}
                   />
-                  <p className="text-[10px] text-slate-500 font-medium">Player 1</p>
+                  <p className="text-[10px] text-slate-500 font-medium">admin</p>
                 </div>
               </div>
             </div>
@@ -317,7 +301,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, accent, onLogout
             <Menu size={24} />
           </motion.button>
           <span className="font-bold text-white tracking-widest text-sm flex items-center gap-2">
-            <Terminal size={16} className="text-violet-500" />
+            <Terminal size={16} className="text-white" />
             LETHRINUS
           </span>
           <div className="w-10" />

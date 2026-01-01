@@ -141,13 +141,13 @@ export const Notes: React.FC<NotesProps> = ({ accent }) => {
 
   return (
     <motion.div
-      className="flex h-full overflow-hidden bg-[#050505]"
+      className="flex h-full overflow-hidden bg-transparent"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
       {/* Sidebar List */}
       <motion.div
-        className="w-80 bg-[#0a0a0c] border-r border-white/5 flex flex-col"
+        className="w-80 bg-black/10 backdrop-blur-xl border-r border-white/10 flex flex-col"
         initial={{ x: -50, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.4 }}
@@ -166,12 +166,12 @@ export const Notes: React.FC<NotesProps> = ({ accent }) => {
               placeholder="Search notes..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 bg-black/30 border border-white/10 rounded-lg text-sm text-white placeholder-slate-600 focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 outline-none transition-all"
+              className="w-full pl-9 pr-4 py-2.5 bg-black/30 border border-white/10 rounded-lg text-sm text-white placeholder-slate-600 focus:ring-2 focus:ring-white-500/50 focus:border-white-500 outline-none transition-all"
             />
           </motion.div>
           <motion.button
             onClick={handleCreateNote}
-            className="w-full py-2.5 bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-500 hover:to-violet-600 text-white rounded-lg flex items-center justify-center gap-2 text-sm font-bold uppercase tracking-wide transition-all shadow-lg shadow-violet-500/25"
+            className="w-full py-2.5 bg-gradient-to-r from-white-600 to-white-700 hover:from-white-500 hover:to-white-600 text-white rounded-lg flex items-center justify-center gap-2 text-sm font-bold uppercase tracking-wide transition-all shadow-lg shadow-white-500/25"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             initial={{ y: 10, opacity: 0 }}
@@ -202,21 +202,21 @@ export const Notes: React.FC<NotesProps> = ({ accent }) => {
                   onClick={() => setActiveNoteId(note.id)}
                   className={`
                     p-4 border-b border-white/5 cursor-pointer group transition-all relative
-                    ${activeNoteId === note.id ? 'bg-violet-500/10' : 'hover:bg-white/5'}
+                    ${activeNoteId === note.id ? 'bg-white-500/10' : 'hover:bg-white/5'}
                   `}
                 >
                   {/* Active Indicator */}
                   {activeNoteId === note.id && (
                     <motion.div
                       layoutId="activeNote"
-                      className="absolute left-0 top-0 bottom-0 w-0.5 bg-violet-500"
+                      className="absolute left-0 top-0 bottom-0 w-0.5 bg-white-500"
                     />
                   )}
 
                   <div className="flex justify-between items-start mb-1">
                     <h4
                       className={`font-medium truncate flex-1 ${
-                        activeNoteId === note.id ? 'text-violet-300' : 'text-white'
+                        activeNoteId === note.id ? 'text-white-300' : 'text-white'
                       }`}
                     >
                       {note.title || 'Untitled'}
@@ -225,7 +225,7 @@ export const Notes: React.FC<NotesProps> = ({ accent }) => {
                       <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
-                        className="text-violet-500"
+                        className="text-white-500"
                       >
                         <Pin size={12} className="rotate-45 fill-current" />
                       </motion.div>
@@ -263,7 +263,7 @@ export const Notes: React.FC<NotesProps> = ({ accent }) => {
 
       {/* Editor */}
       <motion.div
-        className="flex-1 bg-[#0a0a0c] flex flex-col h-full overflow-hidden relative"
+        className="flex-1 bg-black/10 backdrop-blur-xl flex flex-col h-full overflow-hidden relative"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
@@ -276,7 +276,7 @@ export const Notes: React.FC<NotesProps> = ({ accent }) => {
             key={activeNote.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="max-w-3xl w-full mx-auto p-8 h-full flex flex-col relative z-10"
+            className="w-full p-8 h-full flex flex-col relative z-10"
           >
             {/* Title Row */}
             <div className="flex items-center justify-between mb-6 gap-4">
@@ -298,7 +298,7 @@ export const Notes: React.FC<NotesProps> = ({ accent }) => {
                       className="flex items-center gap-2 text-xs text-slate-400"
                     >
                       <motion.div
-                        className="w-2 h-2 rounded-full bg-violet-500"
+                        className="w-2 h-2 rounded-full bg-white-500"
                         animate={{ scale: [1, 1.2, 1] }}
                         transition={{ duration: 1, repeat: Infinity }}
                       />
@@ -334,7 +334,7 @@ export const Notes: React.FC<NotesProps> = ({ accent }) => {
                   onClick={() => handleUpdateNote(activeNote.id, { isPinned: !activeNote.isPinned })}
                   className={`p-2.5 rounded-lg transition-all ${
                     activeNote.isPinned
-                      ? 'text-violet-400 bg-violet-500/20 border border-violet-500/30'
+                      ? 'text-white-400 bg-white-500/20 border border-white-500/30'
                       : 'text-slate-500 hover:text-white hover:bg-white/5 border border-transparent'
                   }`}
                   whileHover={{ scale: 1.05 }}

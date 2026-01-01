@@ -4,7 +4,7 @@ import { api } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import { Terminal, Lock, Mail, ArrowRight, AlertCircle, Zap, Shield, Cpu } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DecryptedText, SpotlightCard, Magnet, ParticlesField, AuroraBackground, Float, PulseRing, CyberCat } from './Animations';
+import { DecryptedText, SpotlightCard, Magnet, ParticlesField, AuroraBackground, Float, PulseRing } from './Animations';
 
 interface AuthProps {
   onLogin: () => void;
@@ -57,14 +57,14 @@ export const Login: React.FC<AuthProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-[#050505] overflow-hidden relative selection:bg-violet-500/30 selection:text-white">
-      {/* Background Effects - Beautiful Aurora and Particles */}
-      <AuroraBackground colorStops={['#8b5cf6', '#6366f1', '#3b82f6', '#8b5cf6']} speed={0.4} blur={150} />
-      <ParticlesField color="#8b5cf6" particleCount={50} speed={0.4} connectionDistance={130} showConnections={true} />
+    <div className="min-h-screen w-full flex items-center justify-center bg-[#050505] overflow-hidden relative selection:bg-white/30 selection:text-white">
+      {/* Background Effects - Black and White */}
+      <AuroraBackground colorStops={['#ffffff', '#888888', '#444444', '#ffffff']} speed={0.4} blur={150} />
+      <ParticlesField color="#ffffff" particleCount={50} speed={0.4} connectionDistance={130} showConnections={true} />
 
-      {/* Animated Gradient Orbs */}
+      {/* Animated Gradient Orbs - Black and White */}
       <motion.div
-        className="absolute top-1/4 left-1/4 w-[400px] h-[400px] rounded-full bg-violet-600/20 blur-[120px]"
+        className="absolute top-1/4 left-1/4 w-[400px] h-[400px] rounded-full bg-white/10 blur-[120px]"
         animate={{
           x: [0, 50, 0],
           y: [0, -30, 0],
@@ -73,7 +73,7 @@ export const Login: React.FC<AuthProps> = ({ onLogin }) => {
         transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
       />
       <motion.div
-        className="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] rounded-full bg-blue-600/20 blur-[100px]"
+        className="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] rounded-full bg-white/10 blur-[100px]"
         animate={{
           x: [0, -40, 0],
           y: [0, 40, 0],
@@ -83,7 +83,7 @@ export const Login: React.FC<AuthProps> = ({ onLogin }) => {
       />
 
       {/* Grid Background */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,black,transparent)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,black,transparent)]" />
 
       {/* Boot Screen */}
       <AnimatePresence mode="wait">
@@ -97,13 +97,13 @@ export const Login: React.FC<AuthProps> = ({ onLogin }) => {
           >
             <Float duration={2}>
               <div className="relative">
-                <PulseRing color="rgba(139, 92, 246, 0.5)" size={120} />
+                <PulseRing color="rgba(255, 255, 255, 0.5)" size={120} />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <motion.div
                     animate={{ rotate: 360 }}
                     transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
                   >
-                    <Cpu size={40} className="text-violet-500" />
+                    <Cpu size={40} className="text-white" />
                   </motion.div>
                 </div>
               </div>
@@ -115,7 +115,7 @@ export const Login: React.FC<AuthProps> = ({ onLogin }) => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
               >
-                LETHRINUS_OS
+                LETHRINUS
               </motion.h1>
 
               <div className="h-20 flex flex-col items-center justify-center">
@@ -127,7 +127,7 @@ export const Login: React.FC<AuthProps> = ({ onLogin }) => {
                       opacity: bootStep > idx ? 0.5 : bootStep === idx ? 1 : 0,
                       y: bootStep >= idx ? 0 : 10
                     }}
-                    className={`text-xs font-mono ${bootStep === idx ? 'text-violet-400' : 'text-slate-600'}`}
+                    className={`text-xs font-mono ${bootStep === idx ? 'text-white' : 'text-slate-600'}`}
                   >
                     {bootStep >= idx && (
                       <>
@@ -145,7 +145,7 @@ export const Login: React.FC<AuthProps> = ({ onLogin }) => {
                 animate={{ opacity: 1 }}
               >
                 <motion.div
-                  className="h-full bg-gradient-to-r from-violet-600 to-blue-500"
+                  className="h-full bg-gradient-to-r from-white to-gray-400"
                   initial={{ width: '0%' }}
                   animate={{ width: `${(bootStep / bootMessages.length) * 100}%` }}
                   transition={{ duration: 0.5 }}
@@ -161,22 +161,7 @@ export const Login: React.FC<AuthProps> = ({ onLogin }) => {
             transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
             className="relative z-10 w-full max-w-md p-6"
           >
-            {/* Cyber Cat - positioned above the card */}
-            <motion.div
-              className="flex justify-center mb-4"
-              initial={{ opacity: 0, y: -30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, type: 'spring', damping: 15 }}
-            >
-              <Float duration={3}>
-                <CyberCat
-                  isPasswordFocused={isPasswordFocused}
-                  size={100}
-                />
-              </Float>
-            </motion.div>
-
-            <SpotlightCard spotlightColor="rgba(139, 92, 246, 0.2)" className="p-8 backdrop-blur-xl bg-black/40 border-white/5 shadow-2xl">
+            <SpotlightCard spotlightColor="rgba(255, 255, 255, 0.1)" className="p-8 backdrop-blur-xl bg-black/40 border-white/5 shadow-2xl">
               {/* Header */}
               <motion.div
                 className="flex flex-col items-center mb-8 space-y-3"
@@ -184,35 +169,26 @@ export const Login: React.FC<AuthProps> = ({ onLogin }) => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
               >
-                <Magnet strength={5} activeScale={1.1}>
-                  <div className="relative">
-                    <motion.div
-                      className="w-14 h-14 rounded-xl bg-gradient-to-br from-violet-600 to-violet-800 flex items-center justify-center text-white shadow-lg shadow-violet-500/30"
-                      whileHover={{ rotate: 180 }}
-                      transition={{ duration: 0.6 }}
-                    >
-                      <Terminal size={28} />
-                    </motion.div>
-                    <motion.div
-                      className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-black"
-                      animate={{ scale: [1, 1.2, 1] }}
-                      transition={{ duration: 2, repeat: Infinity }}
+                {/* Cat GIF instead of logo */}
+                <Float duration={3}>
+                  <motion.div className="relative">
+                    <motion.img
+                      src="/cat.gif"
+                      alt="Login animation"
+                      className="w-[150px] h-[150px] object-contain relative z-10"
+                      style={{
+                        filter: 'drop-shadow(0 0 20px rgba(255, 255, 255, 0.8)) drop-shadow(0 0 40px rgba(255, 255, 255, 0.4))',
+                      }}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
                     />
-                  </div>
-                </Magnet>
+                  </motion.div>
+                </Float>
 
                 <div className="text-center">
                   <h1 className="text-2xl font-bold text-white tracking-widest font-mono">
                     <DecryptedText text="LETHRINUS_OS" speed={60} />
                   </h1>
-                  <motion.p
-                    className="text-xs text-slate-500 uppercase tracking-[0.3em] mt-1 font-mono flex items-center justify-center gap-2"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.5 }}
-                  >
-                    <Shield size={10} /> Secure Access Terminal
-                  </motion.p>
                 </div>
               </motion.div>
 
@@ -250,7 +226,7 @@ export const Login: React.FC<AuthProps> = ({ onLogin }) => {
                     <Zap size={8} /> Identity
                   </label>
                   <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500 group-focus-within:text-violet-400 transition-colors">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500 group-focus-within:text-white transition-colors">
                       <Mail size={16} />
                     </div>
                     <input
@@ -258,7 +234,7 @@ export const Login: React.FC<AuthProps> = ({ onLogin }) => {
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full bg-black/50 border border-white/10 rounded-lg py-3 pl-10 pr-4 text-sm text-slate-200 focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 transition-all placeholder:text-slate-700 font-mono"
+                      className="w-full bg-black/50 border border-white/10 rounded-lg py-3 pl-10 pr-4 text-sm text-slate-200 focus:ring-2 focus:ring-white/50 focus:border-white transition-all placeholder:text-slate-700 font-mono"
                       placeholder="user@lethrinus.sys"
                     />
                   </div>
@@ -275,7 +251,7 @@ export const Login: React.FC<AuthProps> = ({ onLogin }) => {
                     <Zap size={8} /> Passkey
                   </label>
                   <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500 group-focus-within:text-violet-400 transition-colors">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500 group-focus-within:text-white transition-colors">
                       <Lock size={16} />
                     </div>
                     <input
@@ -285,7 +261,7 @@ export const Login: React.FC<AuthProps> = ({ onLogin }) => {
                       onChange={(e) => setPassword(e.target.value)}
                       onFocus={() => setIsPasswordFocused(true)}
                       onBlur={() => setIsPasswordFocused(false)}
-                      className="w-full bg-black/50 border border-white/10 rounded-lg py-3 pl-10 pr-4 text-sm text-slate-200 focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 transition-all placeholder:text-slate-700 font-mono"
+                      className="w-full bg-black/50 border border-white/10 rounded-lg py-3 pl-10 pr-4 text-sm text-slate-200 focus:ring-2 focus:ring-white/50 focus:border-white transition-all placeholder:text-slate-700 font-mono"
                       placeholder="••••••••••••"
                     />
                   </div>
@@ -295,7 +271,7 @@ export const Login: React.FC<AuthProps> = ({ onLogin }) => {
                 <motion.button
                   type="submit"
                   disabled={loading}
-                  className="w-full group relative overflow-hidden rounded-lg bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-500 hover:to-violet-600 text-white py-3 transition-all duration-300 mt-6 shadow-lg shadow-violet-500/25"
+                  className="w-full group relative overflow-hidden rounded-lg bg-gradient-to-r from-white to-gray-400 hover:from-gray-200 hover:to-gray-300 text-black py-3 transition-all duration-300 mt-6 shadow-lg shadow-white/25"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.6 }}
@@ -334,22 +310,6 @@ export const Login: React.FC<AuthProps> = ({ onLogin }) => {
                   </div>
                 </motion.button>
               </motion.form>
-
-              {/* Footer */}
-              <motion.div
-                className="mt-8 text-center"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.7 }}
-              >
-                <div className="flex items-center justify-center gap-2 text-[10px] text-slate-700 font-mono">
-                  <span>System Version 5.2</span>
-                  <span className="text-slate-800">|</span>
-                  <span className="flex items-center gap-1">
-                    Status: <span className="text-emerald-500 animate-pulse">● Online</span>
-                  </span>
-                </div>
-              </motion.div>
             </SpotlightCard>
 
             {/* Decorative Elements */}

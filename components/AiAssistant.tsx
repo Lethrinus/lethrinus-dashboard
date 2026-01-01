@@ -17,7 +17,7 @@ const TypingIndicator = () => (
     {[0, 1, 2].map(i => (
       <motion.div
         key={i}
-        className="w-2 h-2 bg-violet-400 rounded-full"
+        className="w-2 h-2 bg-white-400 rounded-full"
         animate={{ y: [0, -6, 0] }}
         transition={{
           duration: 0.6,
@@ -150,7 +150,7 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ accent }) => {
       >
         <div className="flex items-center gap-3">
           <motion.div
-            className="p-2.5 rounded-xl bg-gradient-to-br from-violet-600 to-violet-800 text-white shadow-lg shadow-violet-500/30"
+            className="p-2.5 rounded-xl bg-gradient-to-br from-white-600 to-white-800 text-white shadow-lg shadow-white-500/30"
             whileHover={{ rotate: 360 }}
             transition={{ duration: 0.6 }}
           >
@@ -233,7 +233,7 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ accent }) => {
                     w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0
                     ${msg.role === 'user'
                       ? 'bg-slate-700'
-                      : 'bg-gradient-to-br from-violet-600 to-violet-800 shadow-lg shadow-violet-500/20'
+                      : 'bg-gradient-to-br from-white-600 to-white-800 shadow-lg shadow-white-500/20'
                     }
                   `}
                   whileHover={{ scale: 1.1 }}
@@ -250,7 +250,7 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ accent }) => {
                     max-w-[80%] p-4 rounded-2xl text-sm leading-relaxed shadow-lg
                     ${msg.role === 'user'
                       ? 'bg-[#131316] text-slate-100 rounded-tr-sm border border-white/10'
-                      : 'bg-violet-500/10 text-slate-200 border border-violet-500/20 rounded-tl-sm'
+                      : 'bg-white-500/10 text-slate-200 border border-white-500/20 rounded-tl-sm'
                     }
                   `}
                   whileHover={{ scale: 1.01 }}
@@ -271,10 +271,10 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ accent }) => {
               exit={{ opacity: 0, y: 10 }}
               className="flex gap-3"
             >
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-gradient-to-br from-violet-600 to-violet-800 shadow-lg shadow-violet-500/20">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-gradient-to-br from-white-600 to-white-800 shadow-lg shadow-white-500/20">
                 <Sparkles size={16} className="text-white" />
               </div>
-              <div className="bg-violet-500/10 border border-violet-500/20 rounded-2xl rounded-tl-sm px-4">
+              <div className="bg-white-500/10 border border-white-500/20 rounded-2xl rounded-tl-sm px-4">
                 <TypingIndicator />
               </div>
             </motion.div>
@@ -298,7 +298,7 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ accent }) => {
             onKeyDown={e => e.key === 'Enter' && !isLoading && handleSend()}
             placeholder={!hasApiKey ? 'Configure API Key in Settings first...' : 'Ask anything...'}
             disabled={isLoading || !hasApiKey}
-            className="w-full pl-5 pr-14 py-4 rounded-xl bg-[#131316] border border-white/10 focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 outline-none transition-all shadow-inner text-white disabled:opacity-50 placeholder-slate-600"
+            className="w-full pl-5 pr-14 py-4 rounded-xl bg-[#131316] border border-white/10 focus:border-white-500/50 focus:ring-2 focus:ring-white-500/20 outline-none transition-all shadow-inner text-white disabled:opacity-50 placeholder-slate-600"
           />
           <motion.button
             onClick={handleSend}
@@ -307,7 +307,7 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ accent }) => {
               absolute right-2 p-2.5 rounded-lg transition-all
               ${isLoading || !input.trim() || !hasApiKey
                 ? 'text-slate-600 bg-transparent'
-                : 'text-white bg-gradient-to-r from-violet-600 to-violet-700 shadow-lg shadow-violet-500/25 hover:from-violet-500 hover:to-violet-600'
+                : 'text-white bg-gradient-to-r from-white-600 to-white-700 shadow-lg shadow-white-500/25 hover:from-white-500 hover:to-white-600'
               }
             `}
             whileHover={!isLoading && input.trim() && hasApiKey ? { scale: 1.05 } : {}}

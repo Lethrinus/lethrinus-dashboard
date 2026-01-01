@@ -33,6 +33,11 @@ import {
   Search,
   Trash2,
   AlertTriangle,
+  ZoomIn,
+  ZoomOut,
+  Move,
+  RotateCw,
+  Download,
 } from 'lucide-react';
 import { SpotlightCard, FadeIn, CardHover, Skeleton, ModalWrapper, GlassCard } from './Animations';
 
@@ -98,9 +103,14 @@ export const Journal: React.FC<JournalProps> = ({ accent }) => {
   const [isTypingSpotify, setIsTypingSpotify] = useState(false);
   const [deletingEntryId, setDeletingEntryId] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  const [imageTransform, setImageTransform] = useState({ scale: 1, x: 0, y: 0 });
+  const [editingImageIndex, setEditingImageIndex] = useState<number | null>(null);
+  const [imageSettings, setImageSettings] = useState<Record<number, { zoom: number; positionX: number; positionY: number; objectFit: 'contain' | 'cover' }>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const spotifyInputRef = useRef<HTMLInputElement>(null);
+  const imageContainerRef = useRef<HTMLDivElement>(null);
 
   // Load entries on mount
   useEffect(() => {
@@ -162,6 +172,41 @@ export const Journal: React.FC<JournalProps> = ({ accent }) => {
     }
   };
 
+  // Parse Spotify URL to embed format
+  const parseSpotifyUrl = (url: string): string => {
+    if (!url || !url.includes('spotify.com')) return url;
+    
+    // Remove any query parameters and fragments
+    const cleanUrl = url.split('?')[0].split('#')[0].trim();
+    
+    // Handle different Spotify URL formats
+    // Format 1: https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT
+    // Format 2: https://open.spotify.com/album/...
+    // Format 3: https://open.spotify.com/playlist/...
+    // Format 4: Already embed format: https://open.spotify.com/embed/...
+    
+    if (cleanUrl.includes('/embed/')) {
+      // Already in embed format
+      return cleanUrl;
+    }
+    
+    // Extract the type (track, album, playlist) and ID
+    const match = cleanUrl.match(/spotify\.com\/(track|album|playlist|episode|show)\/([a-zA-Z0-9]+)/);
+    
+    if (match) {
+      const type = match[1];
+      const id = match[2];
+      return `https://open.spotify.com/embed/${type}/${id}`;
+    }
+    
+    // Fallback: try to convert manually
+    if (cleanUrl.includes('open.spotify.com') && !cleanUrl.includes('/embed')) {
+      return cleanUrl.replace('open.spotify.com/', 'open.spotify.com/embed/');
+    }
+    
+    return cleanUrl;
+  };
+
   const performSave = async (isManual: boolean) => {
     if (isManual) {
       setIsSaving(true);
@@ -170,8 +215,8 @@ export const Journal: React.FC<JournalProps> = ({ accent }) => {
     setErrorMessage(null);
 
     let embedUrl = activeEntry.spotifyEmbed || '';
-    if (embedUrl && embedUrl.includes('open.spotify.com') && !embedUrl.includes('/embed')) {
-      embedUrl = embedUrl.replace('.com/', '.com/embed/');
+    if (embedUrl) {
+      embedUrl = parseSpotifyUrl(embedUrl);
     }
 
     const entryToSave: JournalEntry = {
@@ -318,10 +363,10 @@ export const Journal: React.FC<JournalProps> = ({ accent }) => {
   const startDay = getDay(startOfMonth(currentMonth));
 
   return (
-    <div className="flex h-full flex-col md:flex-row overflow-hidden bg-[#050505]">
+    <div className="flex h-full flex-col md:flex-row overflow-hidden bg-transparent">
       {/* Sidebar Calendar */}
       <motion.div
-        className="w-full md:w-80 bg-[#0a0a0c] border-r border-white/5 flex flex-col"
+        className="w-full md:w-80 bg-black/10 backdrop-blur-xl border-r border-white/10 flex flex-col"
         initial={{ x: -50, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.5 }}
@@ -375,7 +420,7 @@ export const Journal: React.FC<JournalProps> = ({ accent }) => {
                   className={`
                     h-9 w-9 rounded-lg flex items-center justify-center text-sm relative transition-all
                     ${isSelected
-                      ? 'bg-violet-600 text-white font-bold shadow-lg shadow-violet-500/30'
+                      ? 'bg-white-600 text-white font-bold shadow-lg shadow-white-500/30'
                       : isTodayDate
                       ? 'bg-white/10 text-white font-semibold'
                       : 'text-slate-400 hover:bg-white/5 hover:text-white'
@@ -387,7 +432,7 @@ export const Journal: React.FC<JournalProps> = ({ accent }) => {
                   {format(day, 'd')}
                   {hasEntry && !isSelected && (
                     <motion.div
-                      className="absolute bottom-1 w-1 h-1 rounded-full bg-violet-500"
+                      className="absolute bottom-1 w-1 h-1 rounded-full bg-white-500"
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                     />
@@ -412,7 +457,7 @@ export const Journal: React.FC<JournalProps> = ({ accent }) => {
           </div>
           <motion.button
             onClick={() => setShowEntriesList(true)}
-            className="w-full py-2 px-3 bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/30 rounded-lg text-violet-400 text-xs font-bold uppercase tracking-wide flex items-center justify-center gap-2 transition-all"
+            className="w-full py-2 px-3 bg-white-500/10 hover:bg-white-500/20 border border-white-500/30 rounded-lg text-white-400 text-xs font-bold uppercase tracking-wide flex items-center justify-center gap-2 transition-all"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
@@ -424,7 +469,7 @@ export const Journal: React.FC<JournalProps> = ({ accent }) => {
 
       {/* Main Editor */}
       <motion.div
-        className="flex-1 flex flex-col h-full overflow-hidden bg-[#0a0a0c] relative"
+        className="flex-1 flex flex-col h-full overflow-hidden bg-black/10 backdrop-blur-xl relative"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
@@ -434,7 +479,7 @@ export const Journal: React.FC<JournalProps> = ({ accent }) => {
 
         {/* Header */}
         <motion.header
-          className="p-4 md:p-6 bg-[#0a0a0c]/80 backdrop-blur-xl border-b border-white/5 flex items-center justify-between z-10"
+          className="p-4 md:p-6 bg-black/10 backdrop-blur-xl border-b border-white/10 flex items-center justify-between z-10"
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.3 }}
@@ -458,7 +503,7 @@ export const Journal: React.FC<JournalProps> = ({ accent }) => {
                   className="flex items-center gap-2 text-xs text-slate-400"
                 >
                   <motion.div
-                    className="w-2 h-2 rounded-full bg-violet-500"
+                    className="w-2 h-2 rounded-full bg-white-500"
                     animate={{ scale: [1, 1.2, 1] }}
                     transition={{ duration: 1, repeat: Infinity }}
                   />
@@ -497,7 +542,7 @@ export const Journal: React.FC<JournalProps> = ({ accent }) => {
             <motion.button
               onClick={handleSave}
               disabled={isSaving}
-              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-600 to-violet-700 text-white rounded-xl hover:from-violet-500 hover:to-violet-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-violet-500/25 font-bold text-xs uppercase tracking-wide"
+              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-white-600 to-white-700 text-white rounded-xl hover:from-white-500 hover:to-white-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-white-500/25 font-bold text-xs uppercase tracking-wide"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
@@ -561,7 +606,7 @@ export const Journal: React.FC<JournalProps> = ({ accent }) => {
 
                 <motion.button
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-black/20 border border-white/10 text-slate-400 hover:text-violet-400 hover:border-violet-500/30 transition-all text-sm font-medium"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-black/20 border border-white/10 text-slate-400 hover:text-white-400 hover:border-white-500/30 transition-all text-sm font-medium"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -643,13 +688,14 @@ export const Journal: React.FC<JournalProps> = ({ accent }) => {
                     >
                       <iframe
                         style={{ borderRadius: '12px' }}
-                        src={activeEntry.spotifyEmbed.replace('.com/', '.com/embed/')}
+                        src={parseSpotifyUrl(activeEntry.spotifyEmbed)}
                         width="100%"
                         height="152"
                         frameBorder="0"
                         allowFullScreen
                         allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
                         loading="lazy"
+                        key={parseSpotifyUrl(activeEntry.spotifyEmbed)} // Force re-render on URL change
                       />
                     </motion.div>
                   )}
@@ -663,31 +709,58 @@ export const Journal: React.FC<JournalProps> = ({ accent }) => {
                     animate={{ opacity: 1 }}
                     className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6"
                   >
-                    {activeEntry.images.map((img, idx) => (
-                      <motion.div
-                        key={idx}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.9 }}
-                        className="relative group rounded-xl overflow-hidden aspect-video border border-white/10 shadow-lg bg-black/50"
-                      >
-                        <img
-                          src={img}
-                          alt="Journal"
-                          className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                        />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                          <motion.button
-                            onClick={() => removeImage(idx)}
-                            className="p-2 bg-red-500/80 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                          >
-                            <X size={16} />
-                          </motion.button>
-                        </div>
-                      </motion.div>
-                    ))}
+                    {activeEntry.images.map((img, idx) => {
+                      const settings = imageSettings[idx] || { zoom: 1, positionX: 50, positionY: 50, objectFit: 'contain' as const };
+                      return (
+                        <motion.div
+                          key={idx}
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
+                          className="relative group rounded-xl overflow-hidden border border-white/10 shadow-lg bg-black/50 flex items-center justify-center p-2"
+                        >
+                          <img
+                            src={img}
+                            alt="Journal"
+                            className="max-w-full max-h-[400px] w-auto h-auto transition-transform group-hover:scale-105 rounded-lg"
+                            style={{
+                              objectFit: settings.objectFit,
+                              objectPosition: `${settings.positionX}% ${settings.positionY}%`,
+                              transform: `scale(${settings.zoom})`,
+                            }}
+                            onClick={() => {
+                              setSelectedImageIndex(idx);
+                              setImageTransform({ scale: 1, x: 0, y: 0 });
+                            }}
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 pointer-events-none">
+                            <motion.button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingImageIndex(idx);
+                              }}
+                              className="p-2 bg-white/20 backdrop-blur-sm text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto"
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              title="Edit image"
+                            >
+                              <ImageIcon size={16} />
+                            </motion.button>
+                            <motion.button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeImage(idx);
+                              }}
+                              className="p-2 bg-red-500/80 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto"
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                            >
+                              <X size={16} />
+                            </motion.button>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -729,7 +802,7 @@ export const Journal: React.FC<JournalProps> = ({ accent }) => {
                 placeholder="Search entries..."
                 value={entriesSearchTerm}
                 onChange={e => setEntriesSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2.5 bg-black/30 border border-white/10 rounded-lg text-sm text-white placeholder-slate-600 focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 outline-none transition-all"
+                className="w-full pl-9 pr-4 py-2.5 bg-black/30 border border-white/10 rounded-lg text-sm text-white placeholder-slate-600 focus:ring-2 focus:ring-white-500/50 focus:border-white-500 outline-none transition-all"
               />
             </div>
           </div>
@@ -760,7 +833,7 @@ export const Journal: React.FC<JournalProps> = ({ accent }) => {
                     className={`
                       p-4 rounded-xl border mb-3 transition-all group relative
                       ${isSelected
-                        ? 'bg-violet-500/10 border-violet-500/30'
+                        ? 'bg-white-500/10 border-white-500/30'
                         : 'bg-black/20 border-white/5 hover:bg-white/5 hover:border-white/10'
                       }
                       ${deletingEntryId === entry.id ? 'opacity-50 pointer-events-none' : ''}
@@ -802,7 +875,7 @@ export const Journal: React.FC<JournalProps> = ({ accent }) => {
                           <motion.div
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
-                            className="w-2 h-2 rounded-full bg-violet-500"
+                            className="w-2 h-2 rounded-full bg-white-500"
                           />
                         )}
                       </div>
@@ -906,6 +979,359 @@ export const Journal: React.FC<JournalProps> = ({ accent }) => {
           </div>
         </GlassCard>
       </ModalWrapper>
+
+      {/* Image Viewer Modal */}
+      <AnimatePresence>
+        {selectedImageIndex !== null && activeEntry.images && activeEntry.images[selectedImageIndex] && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setSelectedImageIndex(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              className="relative w-full h-full max-w-7xl max-h-[90vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header Controls */}
+              <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between">
+                <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md rounded-lg px-4 py-2">
+                  <span className="text-white text-sm font-medium">
+                    {selectedImageIndex + 1} / {activeEntry.images?.length || 0}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {/* Zoom Controls */}
+                  <motion.button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setImageTransform(prev => ({ ...prev, scale: Math.min(prev.scale + 0.2, 3) }));
+                    }}
+                    className="p-2 bg-black/60 backdrop-blur-md text-white rounded-lg hover:bg-black/80 transition-colors"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <ZoomIn size={20} />
+                  </motion.button>
+                  <motion.button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setImageTransform(prev => ({ ...prev, scale: Math.max(prev.scale - 0.2, 0.5) }));
+                    }}
+                    className="p-2 bg-black/60 backdrop-blur-md text-white rounded-lg hover:bg-black/80 transition-colors"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <ZoomOut size={20} />
+                  </motion.button>
+                  <motion.button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setImageTransform({ scale: 1, x: 0, y: 0 });
+                    }}
+                    className="p-2 bg-black/60 backdrop-blur-md text-white rounded-lg hover:bg-black/80 transition-colors"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <RotateCw size={20} />
+                  </motion.button>
+                  <motion.button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedImageIndex(null);
+                    }}
+                    className="p-2 bg-black/60 backdrop-blur-md text-white rounded-lg hover:bg-red-500/80 transition-colors"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <X size={20} />
+                  </motion.button>
+                </div>
+              </div>
+
+              {/* Image Container */}
+              <div
+                ref={imageContainerRef}
+                className="flex-1 flex items-center justify-center overflow-hidden relative"
+                onWheel={(e) => {
+                  e.preventDefault();
+                  const delta = e.deltaY > 0 ? -0.1 : 0.1;
+                  setImageTransform(prev => ({
+                    ...prev,
+                    scale: Math.max(0.5, Math.min(3, prev.scale + delta))
+                  }));
+                }}
+                onMouseMove={(e) => {
+                  if (e.buttons === 1 && imageTransform.scale > 1) {
+                    const rect = imageContainerRef.current?.getBoundingClientRect();
+                    if (rect) {
+                      setImageTransform(prev => ({
+                        ...prev,
+                        x: prev.x + e.movementX / prev.scale,
+                        y: prev.y + e.movementY / prev.scale
+                      }));
+                    }
+                  }
+                }}
+              >
+                <motion.img
+                  src={activeEntry.images[selectedImageIndex]}
+                  alt="Journal"
+                  className="max-w-full max-h-full object-contain select-none"
+                  style={{
+                    transform: `scale(${imageTransform.scale}) translate(${imageTransform.x}px, ${imageTransform.y}px)`,
+                    cursor: imageTransform.scale > 1 ? 'grab' : 'default',
+                  }}
+                  drag={imageTransform.scale > 1}
+                  dragConstraints={imageContainerRef}
+                  dragElastic={0.1}
+                  whileDrag={{ cursor: 'grabbing' }}
+                  animate={{
+                    scale: imageTransform.scale,
+                    x: imageTransform.x,
+                    y: imageTransform.y,
+                  }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                />
+              </div>
+
+              {/* Navigation Arrows */}
+              {activeEntry.images && activeEntry.images.length > 1 && (
+                <>
+                  <motion.button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (selectedImageIndex !== null && selectedImageIndex > 0) {
+                        setSelectedImageIndex(selectedImageIndex - 1);
+                        setImageTransform({ scale: 1, x: 0, y: 0 });
+                      }
+                    }}
+                    disabled={selectedImageIndex === 0}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-black/60 backdrop-blur-md text-white rounded-lg hover:bg-black/80 transition-colors disabled:opacity-30 disabled:cursor-not-allowed z-10"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <ChevronLeft size={24} />
+                  </motion.button>
+                  <motion.button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (selectedImageIndex !== null && activeEntry.images && selectedImageIndex < activeEntry.images.length - 1) {
+                        setSelectedImageIndex(selectedImageIndex + 1);
+                        setImageTransform({ scale: 1, x: 0, y: 0 });
+                      }
+                    }}
+                    disabled={selectedImageIndex === (activeEntry.images?.length || 0) - 1}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-black/60 backdrop-blur-md text-white rounded-lg hover:bg-black/80 transition-colors disabled:opacity-30 disabled:cursor-not-allowed z-10"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <ChevronRight size={24} />
+                  </motion.button>
+                </>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Image Edit Modal */}
+      <AnimatePresence>
+        {editingImageIndex !== null && activeEntry.images && activeEntry.images[editingImageIndex] && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setEditingImageIndex(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative w-full max-w-4xl bg-black/90 backdrop-blur-xl rounded-2xl border border-white/10 p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <ImageIcon size={24} />
+                  Customize Image
+                </h3>
+                <motion.button
+                  onClick={() => setEditingImageIndex(null)}
+                  className="p-2 hover:bg-white/10 rounded-lg text-white transition-colors"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  <X size={20} />
+                </motion.button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Preview */}
+                <div className="relative aspect-video rounded-xl overflow-hidden border border-white/10 bg-black/50">
+                  <img
+                    src={activeEntry.images[editingImageIndex]}
+                    alt="Preview"
+                    className="w-full h-full"
+                    style={{
+                      objectFit: imageSettings[editingImageIndex]?.objectFit || 'contain',
+                      objectPosition: `${imageSettings[editingImageIndex]?.positionX || 50}% ${imageSettings[editingImageIndex]?.positionY || 50}%`,
+                      transform: `scale(${imageSettings[editingImageIndex]?.zoom || 1})`,
+                    }}
+                  />
+                </div>
+
+                {/* Controls */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">Display Mode</label>
+                    <div className="flex gap-2">
+                      <motion.button
+                        onClick={() => {
+                          setImageSettings(prev => ({
+                            ...prev,
+                            [editingImageIndex]: {
+                              ...(prev[editingImageIndex] || { zoom: 1, positionX: 50, positionY: 50, objectFit: 'contain' }),
+                              objectFit: 'contain'
+                            }
+                          }));
+                        }}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                          (imageSettings[editingImageIndex]?.objectFit || 'contain') === 'contain'
+                            ? 'bg-white/20 text-white border border-white/30'
+                            : 'bg-black/30 text-slate-400 border border-white/10 hover:bg-white/10'
+                        }`}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        Fit (Show All)
+                      </motion.button>
+                      <motion.button
+                        onClick={() => {
+                          setImageSettings(prev => ({
+                            ...prev,
+                            [editingImageIndex]: {
+                              ...(prev[editingImageIndex] || { zoom: 1, positionX: 50, positionY: 50, objectFit: 'contain' }),
+                              objectFit: 'cover'
+                            }
+                          }));
+                        }}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                          (imageSettings[editingImageIndex]?.objectFit || 'contain') === 'cover'
+                            ? 'bg-white/20 text-white border border-white/30'
+                            : 'bg-black/30 text-slate-400 border border-white/10 hover:bg-white/10'
+                        }`}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        Fill (Crop)
+                      </motion.button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">
+                      Zoom: {((imageSettings[editingImageIndex]?.zoom || 1) * 100).toFixed(0)}%
+                    </label>
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="2"
+                      step="0.1"
+                      value={imageSettings[editingImageIndex]?.zoom || 1}
+                      onChange={(e) => {
+                        setImageSettings(prev => ({
+                          ...prev,
+                          [editingImageIndex]: {
+                            ...(prev[editingImageIndex] || { zoom: 1, positionX: 50, positionY: 50, objectFit: 'contain' }),
+                            zoom: parseFloat(e.target.value)
+                          }
+                        }));
+                      }}
+                      className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">
+                      Horizontal Position: {imageSettings[editingImageIndex]?.positionX || 50}%
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="1"
+                      value={imageSettings[editingImageIndex]?.positionX || 50}
+                      onChange={(e) => {
+                        setImageSettings(prev => ({
+                          ...prev,
+                          [editingImageIndex]: {
+                            ...(prev[editingImageIndex] || { zoom: 1, positionX: 50, positionY: 50, objectFit: 'contain' }),
+                            positionX: parseInt(e.target.value)
+                          }
+                        }));
+                      }}
+                      className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">
+                      Vertical Position: {imageSettings[editingImageIndex]?.positionY || 50}%
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="1"
+                      value={imageSettings[editingImageIndex]?.positionY || 50}
+                      onChange={(e) => {
+                        setImageSettings(prev => ({
+                          ...prev,
+                          [editingImageIndex]: {
+                            ...(prev[editingImageIndex] || { zoom: 1, positionX: 50, positionY: 50, objectFit: 'contain' }),
+                            positionY: parseInt(e.target.value)
+                          }
+                        }));
+                      }}
+                      className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-white"
+                    />
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <motion.button
+                      onClick={() => {
+                        setImageSettings(prev => ({
+                          ...prev,
+                          [editingImageIndex]: { zoom: 1, positionX: 50, positionY: 50, objectFit: 'contain' }
+                        }));
+                      }}
+                      className="flex-1 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-sm font-medium transition-colors"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      Reset
+                    </motion.button>
+                    <motion.button
+                      onClick={() => setEditingImageIndex(null)}
+                      className="flex-1 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm font-medium transition-colors"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      Done
+                    </motion.button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

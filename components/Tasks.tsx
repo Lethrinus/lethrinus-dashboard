@@ -38,7 +38,7 @@ const statusConfig = {
 
 export const Tasks: React.FC<TasksProps> = ({ accent }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('kanban');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [aiConfig, setAiConfig] = useState<AiConfig | null>(null);
   const [loading, setLoading] = useState(true);
@@ -123,7 +123,7 @@ export const Tasks: React.FC<TasksProps> = ({ accent }) => {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Abandon this quest?')) {
+    if (confirm('Abandon this task?')) {
       await api.deleteTask(id);
       loadTasks();
     }
@@ -165,7 +165,7 @@ export const Tasks: React.FC<TasksProps> = ({ accent }) => {
     setGeneratingFor(task.id);
     try {
       const ai = new GoogleGenAI({ apiKey: aiConfig.geminiKey });
-      const prompt = `Break down this task into 3-5 sub-quests: "${task.title}". Return JSON array of strings.`;
+      const prompt = `Break down this task into 3-5 sub-tasks: "${task.title}". Return JSON array of strings.`;
       const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
       const text = response.text || '[]';
       const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
@@ -237,9 +237,9 @@ export const Tasks: React.FC<TasksProps> = ({ accent }) => {
             animate={{ rotate: [0, 10, -10, 0] }}
             transition={{ duration: 2, repeat: Infinity }}
           >
-            <Sword className="text-violet-500" />
+            <Sword className="text-white" />
           </motion.div>
-          Quest Log
+          Task Log
           <span className="text-xs font-normal text-slate-500 bg-white/5 px-2 py-1 rounded-md border border-white/5">
             {activeTasks.length} Active
           </span>
@@ -272,11 +272,11 @@ export const Tasks: React.FC<TasksProps> = ({ accent }) => {
 
           <motion.button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-600 to-violet-700 text-white rounded-lg hover:from-violet-500 hover:to-violet-600 transition-all font-bold text-xs uppercase tracking-wide shadow-lg shadow-violet-500/25"
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-white to-gray-400 text-white rounded-lg hover:from-gray-200 hover:to-gray-300 transition-all font-bold text-xs uppercase tracking-wide shadow-lg shadow-white/25"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            <Plus size={16} /> New Quest
+            <Plus size={16} /> New Task
           </motion.button>
         </div>
       </motion.div>
@@ -290,14 +290,14 @@ export const Tasks: React.FC<TasksProps> = ({ accent }) => {
       >
         <form
           onSubmit={handleQuickAdd}
-          className="flex items-center gap-2 p-1.5 bg-[#131316] border border-white/10 rounded-xl focus-within:border-violet-500/30 transition-colors"
+          className="flex items-center gap-2 p-1.5 bg-[#131316] border border-white/10 rounded-xl focus-within:border-white/30 transition-colors"
         >
           <div className="flex-1 px-3">
             <input
               type="text"
               value={quickTitle}
               onChange={e => setQuickTitle(e.target.value)}
-              placeholder="Add a new side quest..."
+              placeholder="Add a new task..."
               className="w-full bg-transparent border-none text-white placeholder-slate-600 focus:ring-0 text-sm h-full py-2 outline-none"
             />
           </div>
@@ -306,7 +306,7 @@ export const Tasks: React.FC<TasksProps> = ({ accent }) => {
             disabled={!quickTitle.trim()}
             className={`px-4 py-2 rounded-lg text-xs font-bold uppercase transition-all ${
               quickTitle.trim()
-                ? 'bg-violet-600 text-white hover:bg-violet-500'
+                ? 'bg-white text-black hover:bg-gray-200'
                 : 'bg-white/5 text-slate-600'
             }`}
             whileHover={quickTitle.trim() ? { scale: 1.02 } : {}}
@@ -355,8 +355,8 @@ export const Tasks: React.FC<TasksProps> = ({ accent }) => {
                         }
                         className={`w-5 h-5 rounded border flex items-center justify-center mr-4 transition-all ${
                           task.status === 'done'
-                            ? 'bg-violet-500 border-violet-500 text-white'
-                            : 'border-slate-600 hover:border-violet-500'
+                            ? 'bg-white border-white text-white'
+                            : 'border-slate-600 hover:border-white'
                         }`}
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
@@ -384,6 +384,11 @@ export const Tasks: React.FC<TasksProps> = ({ accent }) => {
                         >
                           {task.title}
                         </h3>
+                        {task.description && (
+                          <p className="text-xs text-slate-500 mt-1 line-clamp-2">
+                            {task.description}
+                          </p>
+                        )}
                       </div>
 
                       {/* Actions */}
@@ -396,8 +401,8 @@ export const Tasks: React.FC<TasksProps> = ({ accent }) => {
                         <motion.button
                           onClick={() => generateSubtasks(task)}
                           disabled={generatingFor === task.id}
-                          className="text-slate-500 hover:text-violet-400 transition-colors"
-                          title="AI Sub-quests"
+                          className="text-slate-500 hover:text-white transition-colors"
+                          title="AI Sub-tasks"
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
                         >
@@ -430,9 +435,9 @@ export const Tasks: React.FC<TasksProps> = ({ accent }) => {
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
                           exit={{ opacity: 0, height: 0 }}
-                          className="mt-4 ml-9 p-3 rounded-lg bg-violet-500/5 border border-violet-500/20"
+                          className="mt-4 ml-9 p-3 rounded-lg bg-white/5 border border-white/20"
                         >
-                          <div className="text-xs font-bold text-violet-400 uppercase mb-2 flex items-center gap-1">
+                          <div className="text-xs font-bold text-white uppercase mb-2 flex items-center gap-1">
                             <Sparkles size={12} /> AI Suggestions
                           </div>
                           <div className="space-y-1">
@@ -481,7 +486,7 @@ export const Tasks: React.FC<TasksProps> = ({ accent }) => {
                                 onClick={() => toggleSubtask(task, st.id)}
                                 className={`w-4 h-4 rounded border flex items-center justify-center ${
                                   st.isCompleted
-                                    ? 'bg-violet-500 border-violet-500 text-white'
+                                    ? 'bg-white border-white text-white'
                                     : 'border-slate-600'
                                 }`}
                                 whileHover={{ scale: 1.1 }}
@@ -510,7 +515,7 @@ export const Tasks: React.FC<TasksProps> = ({ accent }) => {
           {tasks.length === 0 && (
             <div className="p-12 text-center">
               <Sparkles size={32} className="mx-auto mb-3 text-slate-600" />
-              <p className="text-slate-500 text-sm">No quests yet. Create your first one!</p>
+              <p className="text-slate-500 text-sm">No tasks yet. Create your first one!</p>
             </div>
           )}
         </motion.div>
@@ -534,7 +539,7 @@ export const Tasks: React.FC<TasksProps> = ({ accent }) => {
                 transition={{ delay: colIndex * 0.1 }}
                 className={`flex flex-col h-full rounded-xl p-3 border transition-colors ${
                   dragOverColumn === status
-                    ? 'bg-violet-500/10 border-violet-500/30'
+                    ? 'bg-white/10 border-white/30'
                     : 'bg-[#131316] border-white/5'
                 }`}
                 onDragOver={e => handleDragOver(e, status)}
@@ -563,7 +568,7 @@ export const Tasks: React.FC<TasksProps> = ({ accent }) => {
                           transition={{ delay: index * 0.03 }}
                           draggable
                           onDragStart={e => handleDragStart(e, task.id)}
-                          className={`bg-[#0a0a0c] p-3 rounded-lg border border-white/10 hover:border-violet-500/30 cursor-move ${
+                          className={`bg-[#0a0a0c] p-3 rounded-lg border border-white/10 hover:border-white/30 cursor-move ${
                             draggedTaskId === task.id ? 'opacity-50' : ''
                           }`}
                           whileHover={{ scale: 1.02 }}
@@ -594,21 +599,33 @@ export const Tasks: React.FC<TasksProps> = ({ accent }) => {
       <ModalWrapper isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
         <div className="bg-[#131316] rounded-xl w-full max-w-md p-6 border border-white/10">
           <h2 className="text-lg font-bold mb-6 text-white flex items-center gap-2">
-            <Sword size={20} className="text-violet-500" />
-            New Quest
+            <Sword size={20} className="text-white" />
+            New Task
           </h2>
           <form onSubmit={handleCreateTask} className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-slate-400 uppercase mb-2">
-                Quest Title
+                Task Title
               </label>
               <input
                 type="text"
                 placeholder="What needs to be done?"
-                className="w-full px-4 py-2.5 rounded-lg bg-black/30 border border-white/10 text-white focus:border-violet-500 outline-none transition-colors"
+                className="w-full px-4 py-2.5 rounded-lg bg-black/30 border border-white/10 text-white focus:border-white outline-none transition-colors"
                 value={newTask.title}
                 onChange={e => setNewTask({ ...newTask, title: e.target.value })}
                 autoFocus
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-400 uppercase mb-2">
+                Description
+              </label>
+              <textarea
+                placeholder="Add details about this task..."
+                className="w-full px-4 py-2.5 rounded-lg bg-black/30 border border-white/10 text-white focus:border-white outline-none transition-colors resize-none min-h-[100px]"
+                value={newTask.description || ''}
+                onChange={e => setNewTask({ ...newTask, description: e.target.value })}
               />
             </div>
 
@@ -651,7 +668,7 @@ export const Tasks: React.FC<TasksProps> = ({ accent }) => {
               </motion.button>
               <motion.button
                 type="submit"
-                className="px-6 py-2 bg-gradient-to-r from-violet-600 to-violet-700 text-white rounded-lg text-xs font-bold uppercase shadow-lg shadow-violet-500/25"
+                className="px-6 py-2 bg-gradient-to-r from-white to-gray-400 text-white rounded-lg text-xs font-bold uppercase shadow-lg shadow-white/25"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >

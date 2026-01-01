@@ -227,7 +227,7 @@ interface SpotlightCardProps {
 export const SpotlightCard: React.FC<SpotlightCardProps> = ({
   children,
   className = '',
-  spotlightColor = 'rgba(139, 92, 246, 0.15)'
+  spotlightColor = 'rgba(255, 255, 255, 0.15)'
 }) => {
   const divRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -248,7 +248,7 @@ export const SpotlightCard: React.FC<SpotlightCardProps> = ({
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       className={`relative overflow-hidden rounded-xl border border-white/10 bg-[#131316] ${className}`}
-      whileHover={{ scale: 1.02, borderColor: 'rgba(139, 92, 246, 0.3)' }}
+      whileHover={{ scale: 1.02, borderColor: 'rgba(255, 255, 255, 0.3)' }}
       transition={{ duration: 0.2 }}
     >
       <div
