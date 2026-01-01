@@ -319,43 +319,13 @@ const QUOTES = [
   { text: 'Geçmiş asla ölmez, sadece uyur.', source: 'Ezel' },
   { text: 'Aşk ve intikam, ikisi de kör eder insanı.', source: 'Ezel' },
   { text: 'Herkesin bir hikayesi vardır, ama her hikaye mutlu bitmez.', source: 'Ezel' },
-  // Diriliş: Ertuğrul
-  { text: 'Adalet, güçlünün değil, haklının yanındadır.', source: 'Diriliş: Ertuğrul' },
-  { text: 'Bir Türk, dünyaya bedeldir.', source: 'Diriliş: Ertuğrul' },
-  { text: 'Kılıç kınından çıktı mı, kan dökülmeden girmez.', source: 'Diriliş: Ertuğrul' },
-  { text: 'Onur, canından daha değerlidir.', source: 'Diriliş: Ertuğrul' },
-  { text: 'Düşmanı küçümseme, ama kendinden de korkma.', source: 'Diriliş: Ertuğrul' },
-  // Çukur
-  { text: 'Çukur\'da herkes bir şeyler kaybeder, ama bazıları her şeyi.', source: 'Çukur' },
-  { text: 'Aile her şeyden önemlidir.', source: 'Çukur' },
-  { text: 'Bazen en iyi plan, plansızlıktır.', source: 'Çukur' },
-  { text: 'Güç, sorumluluk getirir.', source: 'Çukur' },
-  { text: 'Geçmiş asla unutulmaz, sadece gömülür.', source: 'Çukur' },
+  
   // Şahsiyet
   { text: 'Herkesin bir sırrı vardır, bazılarının sırrı daha büyüktür.', source: 'Şahsiyet' },
   { text: 'Gerçekler bazen kurgudan daha ilginçtir.', source: 'Şahsiyet' },
   { text: 'Hafıza, en büyük işkence aletidir.', source: 'Şahsiyet' },
   { text: 'Bazı şeyler unutulmamalı, bazıları unutulmalı.', source: 'Şahsiyet' },
-  // Bir Başkadır
-  { text: 'Herkesin bir hikayesi vardır, sadece dinlemek gerekir.', source: 'Bir Başkadır' },
-  { text: 'Hayat beklenmedik yönlere gider.', source: 'Bir Başkadır' },
-  { text: 'İnsanlar değişir, ama sevgi kalır.', source: 'Bir Başkadır' },
-  { text: 'Bazen en zor kararlar, en doğru olanlardır.', source: 'Bir Başkadır' },
-  // Masum
-  { text: 'Gerçekler her zaman yüzeye çıkar.', source: 'Masum' },
-  { text: 'Adalet geç kalabilir, ama asla gelmez demez.', source: 'Masum' },
-  { text: 'Her suçun bir cezası vardır.', source: 'Masum' },
-  { text: 'İnsan yanılabilir, ama adalet yanılmaz.', source: 'Masum' },
-  // Şahmaran
-  { text: 'Efsaneler gerçek olabilir, sadece inanmak gerekir.', source: 'Şahmaran' },
-  { text: 'Geçmiş ve gelecek birbirine bağlıdır.', source: 'Şahmaran' },
-  { text: 'Bazı sırlar asla açığa çıkmamalı.', source: 'Şahmaran' },
-  { text: 'Kader yazılmıştır, ama değiştirilebilir.', source: 'Şahmaran' },
-  // Fi
-  { text: 'Hayat bir yanılsamadır, gerçekler görecelidir.', source: 'Fi' },
-  { text: 'Her şey birbirine bağlıdır.', source: 'Fi' },
-  { text: 'Zaman her şeyi değiştirir.', source: 'Fi' },
-  { text: 'Gerçekler bazen acımasızdır.', source: 'Fi' },
+
   // 50m2
   { text: 'Bazen en küçük yerler, en büyük sırları saklar.', source: '50m2' },
   { text: 'Geçmiş asla ölmez, sadece saklanır.', source: '50m2' },
@@ -464,7 +434,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ accent }) => {
       {/* Header / Briefing */}
       <motion.div variants={itemVariants} className="space-y-4 mb-8 relative">
 
-        <SpotlightCard className="p-8 relative overflow-visible group min-h-[160px] flex flex-col justify-center">
+        <SpotlightCard className="pt-8 pb-8 pl-8 pr-0 relative overflow-visible group min-h-[160px] flex flex-col justify-center">
           <motion.div
             className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-white to-gray-400"
             initial={{ height: 0 }}
@@ -472,11 +442,33 @@ export const Dashboard: React.FC<DashboardProps> = ({ accent }) => {
             transition={{ duration: 0.8, delay: 0.3 }}
           />
 
+          {/* Roll Button - Inside Panel, Bottom Right, Peeking */}
+          <motion.div
+            className="absolute right-0 bottom-4 z-0"
+            initial={{ x: 16, opacity: 0.4 }}
+            animate={{ x: 0, opacity: 0.6 }}
+            whileHover={{ x: -12, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+          >
+            <motion.button
+              onClick={rollNewQuote}
+              className="p-3 rounded-l-lg bg-white/20 hover:bg-white/30 text-white transition-all backdrop-blur-sm border border-white/30 border-r-0 flex items-center justify-center shadow-lg group-hover:opacity-100"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ 
+                rotate: 360,
+                transition: { duration: 0.6, ease: 'easeInOut' }
+              }}
+              title="Roll new quote"
+            >
+              <RefreshCw size={20} />
+            </motion.button>
+          </motion.div>
+
           {/* Quote Text with Animation */}
           <AnimatePresence mode="wait">
             <motion.h2
               key={quote.text}
-              className="text-2xl font-bold text-white mb-2 font-serif italic relative z-10 max-w-2xl pl-4"
+              className="text-2xl font-bold text-white mb-2 font-serif italic relative z-10 max-w-2xl pl-4 pr-129"
               initial={{ opacity: 0, y: 20, x: -20 }}
               animate={{ opacity: 1, y: 0, x: 0 }}
               exit={{ opacity: 0, y: -20, x: 20 }}
@@ -490,7 +482,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ accent }) => {
           <AnimatePresence mode="wait">
             <motion.p
               key={quote.source}
-              className="text-white text-sm font-medium relative z-10 pl-4"
+              className="text-white text-sm font-medium relative z-10 pl-4 pr-8"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
@@ -501,34 +493,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ accent }) => {
           </AnimatePresence>
 
           <motion.div
-            className="absolute top-0 right-12 text-slate-100 opacity-25 group-hover:opacity-75 transition-opacity"
+            className="absolute top-0 right-32 text-slate-100 opacity-5 group-hover:opacity-15 transition-opacity z-10"
             whileHover={{ rotate: 22, scale: 1.2 }}
           >
             <Tv size={70} />
           </motion.div>
         </SpotlightCard>
-
-        {/* Roll Button - Outside Panel, Bottom Right */}
-        <motion.div
-          className="absolute right-2 bottom-2 z-30 group"
-          initial={{ x: 20, opacity: 0.6 }}
-          animate={{ x: 0, opacity: 1 }}
-          whileHover={{ x: -8, opacity: 1 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-        >
-          <motion.button
-            onClick={rollNewQuote}
-            className="p-3 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-all backdrop-blur-sm border border-white/30 flex items-center justify-center shadow-lg"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ 
-              rotate: 360,
-              transition: { duration: 0.6, ease: 'easeInOut' }
-            }}
-            title="Roll new quote"
-          >
-            <RefreshCw size={20} />
-          </motion.button>
-        </motion.div>
       </motion.div>
 
       {/* Stats Overview - Enhanced with new animations */}
@@ -797,6 +767,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ accent }) => {
               className="w-24 h-24 object-contain cursor-pointer relative z-10"
               style={{
                 imageRendering: 'auto',
+                transform: 'scale(1.3)',
               }}
             />
             <motion.div

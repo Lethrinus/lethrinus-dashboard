@@ -156,7 +156,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, accent, onLogout
               <motion.div
                 className="w-23 h-23 rounded-xl flex items-center justify-center"
                 scale={1.2}
-                whileHover={{ scale: 1.55 }}
+                whileHover={{ scale: 1.2 }}
                 transition={{ duration: 0.5 }}
               >
                 <img
@@ -165,6 +165,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, accent, onLogout
                   className="w-full h-full object-contain"
                   style={{
                     filter: 'drop-shadow(0 0 15px rgba(255, 255, 255, 0.8))',
+                    transform: 'scale(1.7)',
                   }}
 
                 />
