@@ -1,0 +1,15 @@
+name = "r2-storage-worker"
+main = "r2-worker.js"
+compatibility_date = "2024-01-01"
+
+# R2 Bucket Binding
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "dashboard-storage"
+
+[vars]
+# Comma-separated list of allowed origins for CORS
+ALLOWED_ORIGINS = "https://lethrinus-dashboard.vercel.app,http://localhost:3000"
+# Optional: Secret key for authentication (leave empty for public access)
+AUTH_SECRET = ""
+

@@ -1,6 +1,10 @@
 
 import { supabase } from './supabase';
+import { r2 } from './r2';
 import { AppState, JournalEntry, Task, Note, FileItem, MediaItem, User, ThemeMode, AccentColor, AiConfig } from '../types';
+
+// Storage mode - 'r2' or 'supabase'
+const STORAGE_MODE = import.meta.env.VITE_STORAGE_MODE || 'supabase';
 
 // We will use LocalStorage for UI preferences (Theme, Accent, AI Config)
 // to keep the Database schema simple for now.
@@ -457,22 +461,31 @@ class ApiService {
             return [];
         }
 
-        // Generate signed URLs for all files with storage paths
+        // Generate URLs for all files with storage paths
         const filesWithUrls = await Promise.all((data || []).map(async (row: any) => {
-            let signedUrl: string | undefined;
+            let fileUrl: string | undefined;
             
-            // Only generate signed URL for files (not folders) with storage path
+            // Only generate URL for files (not folders) with storage path
             if (row.type === 'file' && row.storage_path) {
-                try {
-                    const { data: urlData, error: urlError } = await supabase.storage
-                        .from('files')
-                        .createSignedUrl(row.storage_path, 60 * 60); // 1 hour expiry
-                    
-                    if (!urlError && urlData) {
-                        signedUrl = urlData.signedUrl;
+                // Check if we have a stored public URL (R2)
+                if (row.public_url) {
+                    fileUrl = row.public_url;
+                } else if (row.storage_provider === 'r2' && r2.isConfigured()) {
+                    // R2 file - get public URL from worker
+                    fileUrl = r2.getPublicUrl(row.storage_path);
+                } else {
+                    // Supabase file - generate signed URL
+                    try {
+                        const { data: urlData, error: urlError } = await supabase.storage
+                            .from('files')
+                            .createSignedUrl(row.storage_path, 60 * 60);
+                        
+                        if (!urlError && urlData) {
+                            fileUrl = urlData.signedUrl;
+                        }
+                    } catch (e) {
+                        console.warn('Failed to generate signed URL for:', row.name);
                     }
-                } catch (e) {
-                    console.warn('Failed to generate signed URL for:', row.name);
                 }
             }
 
@@ -485,7 +498,7 @@ class ApiService {
                 mimeType: row.mime_type,
                 uploadDate: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
                 storagePath: row.storage_path,
-                publicUrl: signedUrl
+                publicUrl: fileUrl
             };
         }));
 
@@ -533,32 +546,47 @@ class ApiService {
         const fileName = `${user.id}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
         const filePath = parentId ? `${parentId}/${fileName}` : fileName;
 
-        // Upload to Supabase Storage
-        const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('files')
-            .upload(filePath, file, {
-                cacheControl: '3600',
-                upsert: false
-            });
+        let storagePath = filePath;
+        let publicUrl: string | null = null;
 
-        if (uploadError) {
-            console.error('Failed to upload file to storage:', uploadError);
-            throw new Error(`Failed to upload file: ${uploadError.message}`);
-        }
-
-        // Always use signed URL for reliable access (works for both public and private buckets)
-        let signedUrl: string | null = null;
-        if (uploadData) {
-            const { data: urlData, error: urlError } = await supabase.storage
-                .from('files')
-                .createSignedUrl(filePath, 60 * 60 * 24 * 7); // 7 days expiry
+        // Use R2 or Supabase based on configuration
+        if (STORAGE_MODE === 'r2' && r2.isConfigured()) {
+            // Upload to Cloudflare R2
+            const result = await r2.uploadFile(file, filePath);
             
-            if (!urlError && urlData) {
-                signedUrl = urlData.signedUrl;
+            if (!result.success) {
+                throw new Error(result.error || 'Failed to upload to R2');
+            }
+
+            storagePath = result.key;
+            publicUrl = result.url;
+        } else {
+            // Upload to Supabase Storage
+            const { data: uploadData, error: uploadError } = await supabase.storage
+                .from('files')
+                .upload(filePath, file, {
+                    cacheControl: '3600',
+                    upsert: false
+                });
+
+            if (uploadError) {
+                console.error('Failed to upload file to storage:', uploadError);
+                throw new Error(`Failed to upload file: ${uploadError.message}`);
+            }
+
+            // Get signed URL
+            if (uploadData) {
+                const { data: urlData, error: urlError } = await supabase.storage
+                    .from('files')
+                    .createSignedUrl(filePath, 60 * 60 * 24 * 7);
+                
+                if (!urlError && urlData) {
+                    publicUrl = urlData.signedUrl;
+                }
             }
         }
 
-        // Create metadata in database (store storage_path, NOT the signed URL since it expires)
+        // Create metadata in database
         const payload: any = {
             name: file.name,
             size: file.size,
@@ -566,15 +594,19 @@ class ApiService {
             folder_id: parentId,
             type: 'file',
             user_id: user.id,
-            storage_path: filePath,
-            // Don't store signed URL in DB as it expires
-            public_url: null
+            storage_path: storagePath,
+            public_url: STORAGE_MODE === 'r2' ? publicUrl : null, // Store R2 URLs (they don't expire)
+            storage_provider: STORAGE_MODE // Track which storage was used
         };
 
         const { data, error } = await supabase.from('files').insert(payload).select().single();
         if (error) {
-            // If database insert fails and we uploaded to storage, try to clean up
-            await supabase.storage.from('files').remove([filePath]);
+            // Cleanup on failure
+            if (STORAGE_MODE === 'r2' && r2.isConfigured()) {
+                await r2.deleteFile(storagePath);
+            } else {
+                await supabase.storage.from('files').remove([filePath]);
+            }
             console.error('Failed to create file metadata:', error);
             throw error;
         }
@@ -588,8 +620,7 @@ class ApiService {
             mimeType: data.mime_type,
             uploadDate: data.created_at ? new Date(data.created_at).getTime() : Date.now(),
             storagePath: data.storage_path,
-            // Return the freshly created signed URL for immediate use
-            publicUrl: signedUrl || undefined
+            publicUrl: publicUrl || undefined
         };
     }
 
@@ -601,7 +632,7 @@ class ApiService {
 
         const { data, error } = await supabase
             .from('files')
-            .select('storage_path')
+            .select('storage_path, public_url, storage_provider')
             .eq('id', fileId)
             .eq('user_id', user.id)
             .single();
@@ -611,22 +642,32 @@ class ApiService {
             return null;
         }
 
-        // Always generate fresh signed URL for reliable access
-        if (data.storage_path) {
-            const { data: urlData, error: urlError } = await supabase.storage
-                .from('files')
-                .createSignedUrl(data.storage_path, 60 * 60); // 1 hour expiry
-
-            if (urlError) {
-                console.error('Failed to create signed URL:', urlError);
-                return null;
-            }
-
-            return urlData?.signedUrl || null;
+        // If we have a stored public URL (R2), use it
+        if (data.public_url) {
+            return data.public_url;
         }
 
-        console.warn('No storage path for file:', fileId);
-        return null;
+        if (!data.storage_path) {
+            console.warn('No storage path for file:', fileId);
+            return null;
+        }
+
+        // Check if file is stored in R2
+        if (data.storage_provider === 'r2' && r2.isConfigured()) {
+            return r2.getPublicUrl(data.storage_path);
+        }
+
+        // Fallback to Supabase signed URL
+        const { data: urlData, error: urlError } = await supabase.storage
+            .from('files')
+            .createSignedUrl(data.storage_path, 60 * 60);
+
+        if (urlError) {
+            console.error('Failed to create signed URL:', urlError);
+            return null;
+        }
+
+        return urlData?.signedUrl || null;
     }
 
     async deleteFileItem(id: string): Promise<void> {
@@ -635,6 +676,24 @@ class ApiService {
             throw new Error('You must be logged in to delete files');
         }
 
+        // First get the file metadata to know which storage to delete from
+        const { data: fileData } = await supabase
+            .from('files')
+            .select('storage_path, storage_provider, type')
+            .eq('id', id)
+            .eq('user_id', user.id)
+            .single();
+
+        // Delete from storage if it's a file (not folder)
+        if (fileData && fileData.type === 'file' && fileData.storage_path) {
+            if (fileData.storage_provider === 'r2' && r2.isConfigured()) {
+                await r2.deleteFile(fileData.storage_path);
+            } else {
+                await supabase.storage.from('files').remove([fileData.storage_path]);
+            }
+        }
+
+        // Delete metadata from database
         const { error } = await supabase
             .from('files')
             .delete()
