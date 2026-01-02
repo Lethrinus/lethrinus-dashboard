@@ -101,6 +101,8 @@ export const Journal: React.FC<JournalProps> = ({ accent }) => {
   const [showEntriesList, setShowEntriesList] = useState(false);
   const [entriesSearchTerm, setEntriesSearchTerm] = useState('');
   const [isTypingSpotify, setIsTypingSpotify] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [deletingEntryId, setDeletingEntryId] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
@@ -262,9 +264,44 @@ export const Journal: React.FC<JournalProps> = ({ accent }) => {
     }
   };
 
-  // Auto-save functionality with debounce
+  // Handle typing detection for content and title
+  const handleContentChange = (value: string) => {
+    setActiveEntry({ ...activeEntry, content: value });
+    
+    // Set typing state
+    setIsTyping(true);
+    
+    // Clear existing typing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    // Reset typing state after user stops typing for 2 seconds
+    typingTimeoutRef.current = setTimeout(() => {
+      setIsTyping(false);
+    }, 2000);
+  };
+
+  const handleTitleChange = (value: string) => {
+    setActiveEntry({ ...activeEntry, title: value });
+    
+    // Set typing state
+    setIsTyping(true);
+    
+    // Clear existing typing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    // Reset typing state after user stops typing for 2 seconds
+    typingTimeoutRef.current = setTimeout(() => {
+      setIsTyping(false);
+    }, 2000);
+  };
+
+  // Auto-save functionality - only when user stops typing
   useEffect(() => {
-    // Clear any existing timeout
+    // Clear any existing save timeout
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
@@ -279,12 +316,12 @@ export const Journal: React.FC<JournalProps> = ({ accent }) => {
       return;
     }
 
-    // Don't auto-save if user is typing in Spotify input
-    if (isTypingSpotify) {
+    // Don't auto-save if user is still typing
+    if (isTyping || isTypingSpotify) {
       return;
     }
 
-    // Set up auto-save after 3 seconds of inactivity (increased from 2)
+    // Set up auto-save after 3 seconds of NO typing activity
     saveTimeoutRef.current = setTimeout(() => {
       performSave(false);
     }, 3000);
@@ -295,7 +332,16 @@ export const Journal: React.FC<JournalProps> = ({ accent }) => {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeEntry.content, activeEntry.title, activeEntry.mood, activeEntry.tags, activeEntry.images, activeEntry.spotifyEmbed, isSaving, isTypingSpotify]);
+  }, [activeEntry.content, activeEntry.title, activeEntry.mood, activeEntry.tags, activeEntry.images, activeEntry.spotifyEmbed, isSaving, isTyping, isTypingSpotify]);
+
+  // Cleanup typing timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleSave = async () => {
     if (!activeEntry.content && !activeEntry.title) {
@@ -592,7 +638,7 @@ export const Journal: React.FC<JournalProps> = ({ accent }) => {
                 type="text"
                 placeholder="Title (optional)"
                 value={activeEntry.title || ''}
-                onChange={e => setActiveEntry({ ...activeEntry, title: e.target.value })}
+                onChange={e => handleTitleChange(e.target.value)}
                 className="w-full text-3xl font-bold bg-transparent border-none focus:ring-0 placeholder-slate-700 text-white mb-6 p-0 outline-none"
               />
 
@@ -776,7 +822,7 @@ export const Journal: React.FC<JournalProps> = ({ accent }) => {
               <textarea
                 placeholder="Write about your day..."
                 value={activeEntry.content || ''}
-                onChange={e => setActiveEntry({ ...activeEntry, content: e.target.value })}
+                onChange={e => handleContentChange(e.target.value)}
                 className="w-full min-h-[400px] resize-none bg-transparent border-none focus:ring-0 text-lg leading-relaxed text-slate-300 placeholder-slate-700 p-0 outline-none"
               />
             </motion.div>
