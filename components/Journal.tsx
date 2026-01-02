@@ -363,10 +363,10 @@ export const Journal: React.FC<JournalProps> = ({ accent }) => {
   const startDay = getDay(startOfMonth(currentMonth));
 
   return (
-    <div className="flex h-full flex-col md:flex-row overflow-hidden bg-transparent">
+    <div className="flex h-full flex-col md:flex-row bg-transparent" style={{ minHeight: '100%', height: '100%' }}>
       {/* Sidebar Calendar */}
       <motion.div
-        className="w-full md:w-80 bg-black/10 backdrop-blur-xl border-r border-white/10 flex flex-col"
+        className="w-full md:w-80 h-full bg-black/10 backdrop-blur-xl border-r border-white/10 flex flex-col flex-shrink-0"
         initial={{ x: -50, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.5 }}
@@ -430,12 +430,19 @@ export const Journal: React.FC<JournalProps> = ({ accent }) => {
                   whileTap={{ scale: 0.95 }}
                 >
                   {format(day, 'd')}
-                  {hasEntry && !isSelected && (
+                  {hasEntry && (
                     <motion.div
-                      className="absolute bottom-1 w-1 h-1 rounded-full bg-white-500"
+                      className={`absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center ${
+                        isSelected ? 'bg-white text-black' : 'bg-emerald-500 text-white'
+                      }`}
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                    />
+                      transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                    >
+                      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    </motion.div>
                   )}
                 </motion.button>
               );
@@ -779,7 +786,7 @@ export const Journal: React.FC<JournalProps> = ({ accent }) => {
 
       {/* Entries List Modal */}
       <ModalWrapper isOpen={showEntriesList} onClose={() => setShowEntriesList(false)}>
-        <GlassCard className="w-full max-w-2xl max-h-[80vh] flex flex-col" blur={20} opacity={0.1}>
+        <GlassCard className="w-full max-w-6xl max-h-[85vh] flex flex-col" blur={20} opacity={0.1}>
           <div className="p-6 border-b border-white/10">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-white flex items-center gap-2">

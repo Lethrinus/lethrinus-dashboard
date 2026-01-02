@@ -457,17 +457,39 @@ class ApiService {
             return [];
         }
 
-        return (data || []).map((row: any) => ({
-            id: row.id,
-            name: row.name,
-            folderId: row.folder_id,
-            type: row.type,
-            size: row.size,
-            mimeType: row.mime_type,
-            uploadDate: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
-            storagePath: row.storage_path,
-            publicUrl: row.public_url
+        // Generate signed URLs for all files with storage paths
+        const filesWithUrls = await Promise.all((data || []).map(async (row: any) => {
+            let signedUrl: string | undefined;
+            
+            // Only generate signed URL for files (not folders) with storage path
+            if (row.type === 'file' && row.storage_path) {
+                try {
+                    const { data: urlData, error: urlError } = await supabase.storage
+                        .from('files')
+                        .createSignedUrl(row.storage_path, 60 * 60); // 1 hour expiry
+                    
+                    if (!urlError && urlData) {
+                        signedUrl = urlData.signedUrl;
+                    }
+                } catch (e) {
+                    console.warn('Failed to generate signed URL for:', row.name);
+                }
+            }
+
+            return {
+                id: row.id,
+                name: row.name,
+                folderId: row.folder_id,
+                type: row.type,
+                size: row.size,
+                mimeType: row.mime_type,
+                uploadDate: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
+                storagePath: row.storage_path,
+                publicUrl: signedUrl
+            };
         }));
+
+        return filesWithUrls;
     }
 
     async createFolder(name: string, parentId: string | null): Promise<FileItem> {
@@ -521,41 +543,38 @@ class ApiService {
 
         if (uploadError) {
             console.error('Failed to upload file to storage:', uploadError);
-            // If storage upload fails, still create metadata (for compatibility)
-            // In production, you might want to throw the error
+            throw new Error(`Failed to upload file: ${uploadError.message}`);
         }
 
-        // Get public URL (if storage upload succeeded)
-        let publicUrl: string | null = null;
-        if (!uploadError) {
-            const { data: urlData } = supabase.storage
+        // Always use signed URL for reliable access (works for both public and private buckets)
+        let signedUrl: string | null = null;
+        if (uploadData) {
+            const { data: urlData, error: urlError } = await supabase.storage
                 .from('files')
-                .getPublicUrl(filePath);
-            publicUrl = urlData.publicUrl;
+                .createSignedUrl(filePath, 60 * 60 * 24 * 7); // 7 days expiry
+            
+            if (!urlError && urlData) {
+                signedUrl = urlData.signedUrl;
+            }
         }
 
-        // Create metadata in database
+        // Create metadata in database (store storage_path, NOT the signed URL since it expires)
         const payload: any = {
             name: file.name,
             size: file.size,
             mime_type: file.type,
             folder_id: parentId,
             type: 'file',
-            user_id: user.id
+            user_id: user.id,
+            storage_path: filePath,
+            // Don't store signed URL in DB as it expires
+            public_url: null
         };
-
-        // Add storage info if upload succeeded
-        if (!uploadError && uploadData) {
-            payload.storage_path = filePath;
-            payload.public_url = publicUrl;
-        }
 
         const { data, error } = await supabase.from('files').insert(payload).select().single();
         if (error) {
             // If database insert fails and we uploaded to storage, try to clean up
-            if (!uploadError && uploadData) {
-                await supabase.storage.from('files').remove([filePath]);
-            }
+            await supabase.storage.from('files').remove([filePath]);
             console.error('Failed to create file metadata:', error);
             throw error;
         }
@@ -569,7 +588,8 @@ class ApiService {
             mimeType: data.mime_type,
             uploadDate: data.created_at ? new Date(data.created_at).getTime() : Date.now(),
             storagePath: data.storage_path,
-            publicUrl: data.public_url
+            // Return the freshly created signed URL for immediate use
+            publicUrl: signedUrl || undefined
         };
     }
 
@@ -581,29 +601,31 @@ class ApiService {
 
         const { data, error } = await supabase
             .from('files')
-            .select('storage_path, public_url')
+            .select('storage_path')
             .eq('id', fileId)
             .eq('user_id', user.id)
             .single();
 
         if (error || !data) {
+            console.warn('File metadata not found for id:', fileId, error);
             return null;
         }
 
-        // If we have a public URL, return it
-        if (data.public_url) {
-            return data.public_url;
-        }
-
-        // Otherwise, generate signed URL
+        // Always generate fresh signed URL for reliable access
         if (data.storage_path) {
-            const { data: urlData } = await supabase.storage
+            const { data: urlData, error: urlError } = await supabase.storage
                 .from('files')
-                .createSignedUrl(data.storage_path, 3600);
+                .createSignedUrl(data.storage_path, 60 * 60); // 1 hour expiry
+
+            if (urlError) {
+                console.error('Failed to create signed URL:', urlError);
+                return null;
+            }
 
             return urlData?.signedUrl || null;
         }
 
+        console.warn('No storage path for file:', fileId);
         return null;
     }
 

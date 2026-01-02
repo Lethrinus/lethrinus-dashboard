@@ -5,7 +5,7 @@ import { api } from '../services/api';
 import { Note, AccentColor } from '../types';
 import { Plus, Trash2, Pin, Search, FileText, Sparkles, Save, Check, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
-import { SpotlightCard, CardHover, Skeleton, GlassCard, GradientText, Shimmer } from './Animations';
+import { SpotlightCard, CardHover, Skeleton, GlassCard, GradientText, Shimmer, ConfirmDialog } from './Animations';
 
 interface NotesProps {
   accent: AccentColor;
@@ -19,6 +19,12 @@ export const Notes: React.FC<NotesProps> = ({ accent }) => {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Confirm dialog state
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    noteId: string | null;
+  }>({ isOpen: false, noteId: null });
 
   useEffect(() => {
     loadNotes();
@@ -119,14 +125,19 @@ export const Notes: React.FC<NotesProps> = ({ accent }) => {
     };
   }, []);
 
-  const handleDelete = async (e: React.MouseEvent, id: string) => {
+  const handleDelete = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    if (confirm('Delete this note?')) {
-      await api.deleteNote(id);
-      const remaining = notes.filter(n => n.id !== id);
-      setNotes(remaining);
-      if (activeNoteId === id) setActiveNoteId(remaining[0]?.id || null);
-    }
+    setConfirmDialog({ isOpen: true, noteId: id });
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmDialog.noteId) return;
+    const id = confirmDialog.noteId;
+    await api.deleteNote(id);
+    const remaining = notes.filter(n => n.id !== id);
+    setNotes(remaining);
+    if (activeNoteId === id) setActiveNoteId(remaining[0]?.id || null);
+    setConfirmDialog({ isOpen: false, noteId: null });
   };
 
   const filteredNotes = notes
@@ -378,7 +389,7 @@ export const Notes: React.FC<NotesProps> = ({ accent }) => {
             />
           </motion.div>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-slate-500">
+          <div className="absolute inset-0 flex items-center justify-center text-slate-500">
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -391,6 +402,18 @@ export const Notes: React.FC<NotesProps> = ({ accent }) => {
           </div>
         )}
       </motion.div>
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        onClose={() => setConfirmDialog({ isOpen: false, noteId: null })}
+        onConfirm={confirmDelete}
+        title="Delete Note?"
+        message="This note will be permanently removed. This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </motion.div>
   );
 };

@@ -832,6 +832,117 @@ export const ModalWrapper: React.FC<{
 );
 
 // ============================================================================
+// CONFIRM DIALOG - Custom themed confirmation dialog
+// ============================================================================
+interface ConfirmDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title?: string;
+  message?: string;
+  confirmText?: string;
+  cancelText?: string;
+  variant?: 'danger' | 'warning' | 'info';
+}
+
+export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  title = 'Are you sure?',
+  message = 'This action cannot be undone.',
+  confirmText = 'Confirm',
+  cancelText = 'Cancel',
+  variant = 'danger'
+}) => {
+  const variantStyles = {
+    danger: {
+      icon: '⚠️',
+      confirmBg: 'bg-red-500/20 hover:bg-red-500/30',
+      confirmText: 'text-red-400',
+      confirmBorder: 'border-red-500/30',
+    },
+    warning: {
+      icon: '⚡',
+      confirmBg: 'bg-amber-500/20 hover:bg-amber-500/30',
+      confirmText: 'text-amber-400',
+      confirmBorder: 'border-amber-500/30',
+    },
+    info: {
+      icon: 'ℹ️',
+      confirmBg: 'bg-blue-500/20 hover:bg-blue-500/30',
+      confirmText: 'text-blue-400',
+      confirmBorder: 'border-blue-500/30',
+    }
+  };
+
+  const styles = variantStyles[variant];
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <motion.div
+            className="absolute inset-0 bg-black/70 backdrop-blur-md"
+            onClick={onClose}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="relative z-10 bg-[#131316] rounded-2xl w-full max-w-md p-6 border border-white/10 shadow-2xl"
+          >
+            <div className="text-center mb-6">
+              <motion.div 
+                className="text-4xl mb-4"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', delay: 0.1 }}
+              >
+                {styles.icon}
+              </motion.div>
+              <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
+              <p className="text-slate-400 text-sm">{message}</p>
+            </div>
+            
+            <div className="flex gap-3">
+              <motion.button
+                onClick={onClose}
+                className="flex-1 py-3 px-4 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl text-sm font-bold uppercase transition-colors border border-white/10"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                {cancelText}
+              </motion.button>
+              <motion.button
+                onClick={() => {
+                  onConfirm();
+                  onClose();
+                }}
+                className={`flex-1 py-3 px-4 ${styles.confirmBg} ${styles.confirmText} rounded-xl text-sm font-bold uppercase transition-colors border ${styles.confirmBorder}`}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                {confirmText}
+              </motion.button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
+
+// ============================================================================
 // LIST ITEM
 // ============================================================================
 export const listItemVariants: Variants = {
@@ -1732,14 +1843,15 @@ export const GlassCard: React.FC<{
   className?: string;
   blur?: number;
   opacity?: number;
-}> = ({ children, className = '', blur = 10, opacity = 0.1 }) => (
+  hoverScale?: boolean;
+}> = ({ children, className = '', blur = 10, opacity = 0.1, hoverScale = false }) => (
   <motion.div
     className={`backdrop-blur-md border border-white/20 rounded-xl ${className}`}
     style={{
       background: `rgba(255, 255, 255, ${opacity})`,
       backdropFilter: `blur(${blur}px)`,
     }}
-    whileHover={{ borderColor: 'rgba(139, 92, 246, 0.4)', scale: 1.02 }}
+    whileHover={hoverScale ? { borderColor: 'rgba(255, 255, 255, 0.4)', scale: 1.02 } : { borderColor: 'rgba(255, 255, 255, 0.4)' }}
     transition={{ duration: 0.2 }}
   >
     {children}

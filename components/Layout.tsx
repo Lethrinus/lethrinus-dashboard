@@ -309,10 +309,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, accent, onLogout
         </motion.header>
 
         {/* Page Content with Transitions */}
-        <main className="flex-1 overflow-y-auto scroll-smooth custom-scrollbar relative">
+        <main className="flex-1 overflow-hidden relative">
           <AnimatePresence mode="wait">
-            <PageTransition key={location.pathname}>
-              <div className="min-h-full">{children}</div>
+            <PageTransition key={location.pathname} className="h-full">
+              <div className="h-full">{children}</div>
             </PageTransition>
           </AnimatePresence>
         </main>

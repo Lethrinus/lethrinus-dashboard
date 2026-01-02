@@ -19,7 +19,7 @@ import {
   Maximize2,
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { CardHover, Skeleton, ModalWrapper, GlassCard, TiltCard, BorderGlow } from './Animations';
+import { Skeleton, ModalWrapper, GlassCard, ConfirmDialog } from './Animations';
 
 interface FilesProps {
   accent: AccentColor;
@@ -33,7 +33,7 @@ const getFileIcon = (item: FileItem) => {
   return { icon: FileText, color: 'text-slate-400', bg: 'bg-slate-500/20' };
 };
 
-// Image Preview Component - Optimized
+// Image Preview Component - Simplified animations
 const ImagePreview: React.FC<{
   item: FileItem;
   iconConfig: { icon: any; color: string; bg: string };
@@ -48,43 +48,15 @@ const ImagePreview: React.FC<{
   useEffect(() => {
     mountedRef.current = true;
     
-    // If we already have a public URL, use it
+    // If we already have a URL (signed URL from getFiles), use it
     if (item.publicUrl) {
-      console.log('Using public URL:', item.publicUrl);
       setImageUrl(item.publicUrl);
       setLoading(false);
       return;
     }
 
     // If we have storage path but no URL, fetch it
-    if (item.storagePath && !item.publicUrl) {
-      console.log('Fetching URL for storage path:', item.storagePath);
-      setLoading(true);
-      api.getFileUrl(item.id)
-        .then(url => {
-          console.log('Got URL:', url);
-          if (mountedRef.current) {
-            if (url) {
-              setImageUrl(url);
-              setLoading(false);
-            } else {
-              console.warn('No URL returned for item:', item.id);
-              setError(true);
-              setLoading(false);
-            }
-          }
-        })
-        .catch((err) => {
-          console.error('Failed to load image URL:', err);
-          if (mountedRef.current) {
-            setError(true);
-            setLoading(false);
-          }
-        });
-    } else if (!item.publicUrl && !item.storagePath) {
-      // No URL and no storage path - might be a file without storage
-      console.warn('No public URL or storage path for item:', item);
-      // Try to get URL anyway
+    if (item.storagePath) {
       setLoading(true);
       api.getFileUrl(item.id)
         .then(url => {
@@ -104,6 +76,10 @@ const ImagePreview: React.FC<{
             setLoading(false);
           }
         });
+    } else {
+      // No storage path - show error
+      setError(true);
+      setLoading(false);
     }
 
     return () => {
@@ -113,66 +89,42 @@ const ImagePreview: React.FC<{
 
   if (error || (!imageUrl && !loading)) {
     return (
-      <motion.div
-        className={`mb-3 w-full aspect-square rounded-xl ${iconConfig.bg} flex items-center justify-center group/error`}
-        whileHover={{ scale: 1.05 }}
-        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+      <div
+        className={`mb-3 w-full aspect-square rounded-xl ${iconConfig.bg} flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity`}
         onClick={onPreview}
       >
-        <div className="relative">
+        <div className="relative flex flex-col items-center gap-2">
           <Icon size={32} className={iconConfig.color} />
-          <motion.div
-            className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"
-            animate={{ scale: [1, 1.2, 1] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          />
+          <span className="text-[10px] text-slate-500">Unable to load</span>
         </div>
-        <div className="absolute bottom-2 left-2 right-2 text-[10px] text-slate-500 opacity-0 group-hover/error:opacity-100 transition-opacity text-center">
-          Click to retry
-        </div>
-      </motion.div>
+      </div>
     );
   }
 
   return (
     <div 
-      className="mb-3 w-full aspect-square rounded-xl overflow-hidden bg-black/20 border border-white/10 relative group/image cursor-pointer will-change-transform"
+      className="mb-3 w-full aspect-square rounded-xl overflow-hidden bg-black/20 border border-white/10 relative group/image cursor-pointer"
       onClick={onPreview}
     >
       {loading ? (
         <div className="w-full h-full flex items-center justify-center bg-black/20">
-          <motion.div
-            className="w-8 h-8 border-2 border-white-500/30 border-t-white-500 rounded-full"
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-          />
+          <div className="w-6 h-6 border-2 border-slate-500/30 border-t-slate-400 rounded-full animate-spin" />
         </div>
       ) : imageUrl ? (
         <>
-          <motion.img
+          <img
             src={imageUrl}
             alt={item.name}
-            className="w-full h-full object-cover"
-            style={{ 
-              willChange: 'transform',
-              transform: 'translateZ(0)',
-            }}
+            className="w-full h-full object-cover transition-transform duration-300 ease-out group-hover/image:scale-105"
             onError={() => {
               setError(true);
               setLoading(false);
             }}
             loading="lazy"
-            whileHover={{ scale: 1.1 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
           />
-          <motion.div 
-            className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end justify-center pb-2"
-            initial={{ opacity: 0 }}
-            whileHover={{ opacity: 1 }}
-            transition={{ duration: 0.2 }}
-          >
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover/image:opacity-100 transition-opacity duration-200 flex items-end justify-center pb-3">
             <Maximize2 size={16} className="text-white" />
-          </motion.div>
+          </div>
         </>
       ) : null}
     </div>
@@ -187,6 +139,13 @@ export const Files: React.FC<FilesProps> = ({ accent }) => {
   const [newFolderName, setNewFolderName] = useState('');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [previewItem, setPreviewItem] = useState<FileItem | null>(null);
+  
+  // Confirm dialog state
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    itemId: string | null;
+    itemName: string;
+  }>({ isOpen: false, itemId: null, itemName: '' });
 
   useEffect(() => {
     loadFiles();
@@ -224,12 +183,16 @@ export const Files: React.FC<FilesProps> = ({ accent }) => {
     }
   };
 
-  const handleDelete = async (e: React.MouseEvent, id: string) => {
+  const handleDelete = (e: React.MouseEvent, item: FileItem) => {
     e.stopPropagation();
-    if (confirm('Delete this item?')) {
-      await api.deleteFileItem(id);
-      loadFiles();
-    }
+    setConfirmDialog({ isOpen: true, itemId: item.id, itemName: item.name });
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmDialog.itemId) return;
+    await api.deleteFileItem(confirmDialog.itemId);
+    loadFiles();
+    setConfirmDialog({ isOpen: false, itemId: null, itemName: '' });
   };
 
   const currentItems = items.filter(i => i.folderId === currentFolderId);
@@ -352,70 +315,62 @@ export const Files: React.FC<FilesProps> = ({ accent }) => {
               return (
                 <motion.div
                   key={item.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ delay: index * 0.03 }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ delay: index * 0.02, duration: 0.2 }}
                   onClick={() => {
                     if (item.type === 'folder') {
                       setCurrentFolderId(item.id);
                     }
-                    // Image preview is handled by ImagePreview component
                   }}
                   className="group relative"
                 >
-                  <TiltCard intensity={isImage ? 5 : 8}>
-                    <BorderGlow color={isImage ? '#8b5cf6' : '#6366f1'} intensity={isImage ? 0.3 : 0.4}>
-                      <div className="flex flex-col items-center p-4 cursor-pointer h-full relative overflow-hidden" style={{ willChange: 'transform' }}>
-                        {isImage ? (
-                          <ImagePreview 
-                            item={item} 
-                            iconConfig={iconConfig}
-                            onPreview={async () => {
-                              setPreviewItem(item);
-                              if (item.publicUrl) {
-                                setPreviewImage(item.publicUrl);
-                              } else if (item.storagePath) {
-                                try {
-                                  const url = await api.getFileUrl(item.id);
-                                  if (url) setPreviewImage(url);
-                                } catch (error) {
-                                  console.error('Failed to get image URL:', error);
-                                }
-                              }
-                            }}
-                          />
-                        ) : (
-                          <motion.div
-                            className={`mb-3 p-4 rounded-xl ${iconConfig.bg} w-full aspect-square flex items-center justify-center`}
-                            whileHover={{ scale: 1.1, rotate: item.type === 'folder' ? 5 : 0 }}
-                          >
-                            <Icon size={32} className={iconConfig.color} />
-                          </motion.div>
-                        )}
-                        <p className="text-sm font-medium text-white text-center truncate w-full mb-1">
-                          {item.name}
-                        </p>
-                        <p className="text-[10px] text-slate-500">
-                          {item.type === 'folder' 
-                            ? 'Folder' 
-                            : isImage 
-                            ? `${Math.round((item.size || 0) / 1024)} KB`
-                            : format(item.uploadDate, 'MMM d')}
-                        </p>
-
-                        {/* Delete Button */}
-                        <motion.button
-                          onClick={e => handleDelete(e, item.id)}
-                          className="absolute top-2 right-2 p-1.5 text-slate-500 hover:text-red-500 hover:bg-red-500/10 rounded-full opacity-0 group-hover:opacity-100 transition-all z-10"
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                        >
-                          <Trash2 size={14} />
-                        </motion.button>
+                  <div className="flex flex-col items-center p-4 cursor-pointer h-full relative overflow-hidden rounded-xl border border-white/10 bg-[#131316] hover:border-white/20 hover:bg-[#1a1a1f] transition-all duration-200">
+                    {isImage ? (
+                      <ImagePreview 
+                        item={item} 
+                        iconConfig={iconConfig}
+                        onPreview={async () => {
+                          setPreviewItem(item);
+                          if (item.publicUrl) {
+                            setPreviewImage(item.publicUrl);
+                          } else if (item.storagePath) {
+                            try {
+                              const url = await api.getFileUrl(item.id);
+                              if (url) setPreviewImage(url);
+                            } catch (error) {
+                              console.error('Failed to get image URL:', error);
+                            }
+                          }
+                        }}
+                      />
+                    ) : (
+                      <div
+                        className={`mb-3 p-4 rounded-xl ${iconConfig.bg} w-full aspect-square flex items-center justify-center transition-transform duration-200 group-hover:scale-105`}
+                      >
+                        <Icon size={32} className={iconConfig.color} />
                       </div>
-                    </BorderGlow>
-                  </TiltCard>
+                    )}
+                    <p className="text-sm font-medium text-white text-center truncate w-full mb-1">
+                      {item.name}
+                    </p>
+                    <p className="text-[10px] text-slate-500">
+                      {item.type === 'folder' 
+                        ? 'Folder' 
+                        : isImage 
+                        ? `${Math.round((item.size || 0) / 1024)} KB`
+                        : format(item.uploadDate, 'MMM d')}
+                    </p>
+
+                    {/* Delete Button */}
+                    <button
+                      onClick={e => handleDelete(e, item)}
+                      className="absolute top-2 right-2 p-1.5 text-slate-500 hover:text-red-500 hover:bg-red-500/10 rounded-full opacity-0 group-hover:opacity-100 transition-all z-10"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </motion.div>
               );
             })}
@@ -520,6 +475,18 @@ export const Files: React.FC<FilesProps> = ({ accent }) => {
           </form>
         </div>
       </ModalWrapper>
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        onClose={() => setConfirmDialog({ isOpen: false, itemId: null, itemName: '' })}
+        onConfirm={confirmDelete}
+        title="Delete Item?"
+        message={`"${confirmDialog.itemName}" will be permanently removed. This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </motion.div>
   );
 };
