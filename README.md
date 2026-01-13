@@ -308,5 +308,5 @@ This is a personal hobby project, but I'm open to feedback and suggestions! If y
 <div align="center">
   <img src="./public/cat_anim1.gif" width="150" height="150" style="display: block; margin: 0 auto;">
   <br>
-  **Time is a flat circle. Everything we have done or will do we will do over and over and over again- forever.**
+  <strong style="font-size: 1.1em;">Time is a flat circle. Everything we have done or will do we will do over and over and over again- forever.</strong>
 </div>
