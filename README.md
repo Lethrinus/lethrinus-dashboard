@@ -98,6 +98,7 @@ Built with security and privacy in mind:
 
 ---
 
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -304,9 +305,8 @@ This is a personal hobby project, but I'm open to feedback and suggestions! If y
 - Submit a pull request (contributions are welcome!)
 
 ---
-
 <div align="center">
-
-**Time is a flat circle. Everything we have done or will do we will do over and over and over again- forever.**
-
+  <img src="./public/cat_anim1.gif" width="150" height="150" style="display: block; margin: 0 auto;">
+  <br>
+  **Time is a flat circle. Everything we have done or will do we will do over and over and over again- forever.**
 </div>
